@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>제휴 문의</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 0.4rem;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 2rem;
+    }
+
+    .field {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.4rem;
+    }
+
+    label .required {
+      color: #e53e3e;
+      margin-left: 2px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #111;
+      transition: border-color 0.15s;
+      background: #fff;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #5a67d8;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 0.8rem;
+      background: #5a67d8;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: 0.5rem;
+    }
+
+    button[type="submit"]:hover { background: #4c56c0; }
+    button[type="submit"]:active { background: #3d46a8; }
+
+    /* 전송 완료 메시지 */
+    .success {
+      display: none;
+      text-align: center;
+      padding: 2rem 0;
+    }
+
+    .success .icon { font-size: 3rem; margin-bottom: 1rem; }
+    .success h2 { font-size: 1.2rem; color: #111; margin-bottom: 0.5rem; }
+    .success p { font-size: 0.9rem; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <!-- 폼 -->
+    <div id="form-wrap">
+      <h1>제휴 문의</h1>
+      <p class="subtitle">아래 내용을 작성해 주시면 빠르게 검토 후 연락드리겠습니다.</p>
+
+      <!--
+        formspree.io 에서 새 폼을 만들고
+        아래 action 의 YOUR_FORM_ID 를 발급받은 ID 로 교체하세요.
+        예: https://formspree.io/f/xpwzabcd
+      -->
+      <form
+        id="contact-form"
+        action="https://formspree.io/f/mwvyvbwv"
+        method="POST"
+      >
+        <div class="field">
+          <label for="company">회사명 / 브랜드명 <span class="required">*</span></label>
+          <input type="text" id="company" name="company" placeholder="(주)예시컴퍼니" required />
+        </div>
+
+        <div class="field">
+          <label for="name">담당자 성함 <span class="required">*</span></label>
+          <input type="text" id="name" name="name" placeholder="홍길동" required />
+        </div>
+
+        <div class="field">
+          <label for="email">이메일 <span class="required">*</span></label>
+          <input type="email" id="email" name="email" placeholder="example@company.com" required />
+        </div>
+
+        <div class="field">
+          <label for="phone">연락처</label>
+          <input type="tel" id="phone" name="phone" placeholder="010-0000-0000" />
+        </div>
+
+        <div class="field">
+          <label for="type">제휴 유형 <span class="required">*</span></label>
+          <select id="type" name="type" required>
+            <option value="" disabled selected>선택해 주세요</option>
+            <option>마케팅 / 광고 협력</option>
+            <option>콘텐츠 / 미디어 제휴</option>
+            <option>기술 / 플랫폼 연동</option>
+            <option>유통 / 판매 협력</option>
+            <option>투자 / 전략적 제휴</option>
+            <option>기타</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="message">문의 내용 <span class="required">*</span></label>
+          <textarea
+            id="message"
+            name="message"
+            placeholder="제휴 목적, 제안 내용, 기대 효과 등을 자유롭게 적어주세요."
+            required
+          ></textarea>
+        </div>
+
+        <!-- Formspree 스팸 방지 (honeypot) -->
+        <input type="text" name="_gotcha" style="display:none" />
+        <!-- 제출 후 리다이렉트 없이 현재 페이지 유지 (AJAX 사용 시 불필요) -->
+        <input type="hidden" name="_subject" value="[제휴 문의] 새 문의가 도착했습니다" />
+
+        <button type="submit">문의 보내기</button>
+      </form>
+    </div>
+
+    <!-- 전송 완료 메시지 -->
+    <div class="success" id="success-msg">
+      <div class="icon">✅</div>
+      <h2>문의가 접수되었습니다!</h2>
+      <p>담당자가 확인 후 영업일 기준 1~2일 내 연락드리겠습니다.</p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('contact-form');
+    const formWrap = document.getElementById('form-wrap');
+    const successMsg = document.getElementById('success-msg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = '전송 중...';
+
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { Accept: 'application/json' },
+        });
+
+        if (res.ok) {
+          formWrap.style.display = 'none';
+          successMsg.style.display = 'block';
+        } else {
+          const data = await res.json();
+          const msg = data?.errors?.map(e => e.message).join(', ') || '전송에 실패했습니다. 다시 시도해 주세요.';
+          alert(msg);
+          btn.disabled = false;
+          btn.textContent = '문의 보내기';
+        }
+      } catch {
+        alert('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+        btn.disabled = false;
+        btn.textContent = '문의 보내기';
+      }
+    });
+  </script>
+</body>
+</html>
