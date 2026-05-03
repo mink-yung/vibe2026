@@ -1,0 +1,290 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>해랑이의 모험일지</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #ffe4f2, #e7f6ff);
+      color: #333;
+      text-align: center;
+    }
+
+    header {
+      padding: 50px 20px;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 20px;
+    }
+
+    .card {
+      width: 260px;
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 20px rgba(0,0,0,.08);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-8px) scale(1.03);
+    }
+
+    #gameScreen {
+      display: none;
+      padding: 20px;
+    }
+
+    #backBtn {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      width: 40px;
+      height: 40px;
+      background: white;
+      border: none;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      z-index: 100;
+    }
+
+    #backBtn:hover {
+      background: #f0f0f0;
+    }
+
+    #gameArea {
+      position: relative;
+      width: 700px;
+      max-width: 95%;
+      height: 500px;
+      margin: 20px auto;
+      background: linear-gradient(#9be7ff, #dff9ff);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 4px solid white;
+      box-shadow: 0 10px 25px rgba(0,0,0,.1);
+    }
+
+    .item {
+      position: absolute;
+      font-size: 42px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s;
+    }
+
+    .item:hover {
+      transform: scale(1.15);
+    }
+
+    #basket {
+        position: absolute;
+        bottom: 20px;
+        left: 300px;
+        font-size: 80px;
+        transition: left 0.05s linear;
+        user-select: none;
+    }
+
+    button {
+      border: none;
+      background: #ff73b3;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .guide {
+      color: #666;
+      margin-top: -5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 메인 화면 -->
+  <div id="mainScreen">
+    <header>
+      <h1>🌸 해랑이의 모험일지 🐾</h1>
+      <p>카드를 눌러 모험을 시작해!</p>
+    </header>
+
+    <section class="container">
+      <div class="card" onclick="window.open('https://luminous-our-life.tistory.com/', '_blank')">
+        <h2>🎮 게임 개발</h2>
+        <p>귀여운 고양이 게임 제작중!</p>
+      </div>
+
+      <div class="card" onclick="window.open('https://github.com/mink-yung', '_blank')">
+        <h2>📚 배움의 길</h2>
+        <p>프랑스어 · 일본어 · 코딩 레벨업 중!</p>
+      </div>
+
+      <div class="card" onclick="startGame()">
+        <h2>🦐 맛있는 탐험</h2>
+        <p>클릭해서 새우 받기 게임 시작!</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- 게임 화면 -->
+  <div id="gameScreen">
+    <button id="backBtn" onclick="goHome()">&#8592;</button>
+    <h2>🦐 해산물 캐치 게임!</h2>
+    <p class="guide">
+      🍤 +1점 | 🦀 +5점 | 🍫 -3점
+    </p>
+    <h3>점수: <span id="score">0</span></h3>
+
+    <div id="gameArea">
+      <div id="basket">🧺</div>
+    </div>
+  </div>
+
+  <script>
+    let score = 0;
+    let gameInterval;
+
+    const gameArea = document.getElementById("gameArea");
+    const basket = document.getElementById("basket");
+
+    let basketX = 300;
+    const basketWidth = 80;
+
+    function startGame() {
+    document.getElementById("mainScreen").style.display = "none";
+    document.getElementById("gameScreen").style.display = "block";
+
+    score = 0;
+    document.getElementById("score").textContent = score;
+
+    basketX = 300;
+    basket.style.left = basketX + "px";
+
+    clearInterval(gameInterval);
+    gameInterval = setInterval(createItem, 700);
+    }
+
+    function createItem() {
+    const item = document.createElement("div");
+    item.className = "item";
+
+    const roll = Math.random();
+
+    if (roll < 0.10) {
+        item.textContent = "🍫";
+        item.dataset.point = -3;
+    } else if (roll < 0.22) {
+        item.textContent = "🦀";
+        item.dataset.point = 5;
+    } else {
+        item.textContent = "🍤";
+        item.dataset.point = 1;
+    }
+
+    let x = Math.random() * (gameArea.clientWidth - 60);
+    let y = 0;
+
+    item.style.left = x + "px";
+    item.style.top = y + "px";
+
+    gameArea.appendChild(item);
+
+    const fall = setInterval(() => {
+        y += 4;
+        item.style.top = y + "px";
+
+        // 바구니 충돌 판정
+        const basketY = gameArea.clientHeight - 120;
+
+        if (
+        y >= basketY &&
+        x > basketX - 30 &&
+        x < basketX + basketWidth
+        ) {
+        score += Number(item.dataset.point);
+        document.getElementById("score").textContent = score;
+
+        clearInterval(fall);
+        item.remove();
+        return;
+        }
+
+        // 바닥에 떨어짐
+        if (y > gameArea.clientHeight) {
+        clearInterval(fall);
+        item.remove();
+        }
+
+    }, 20);
+    }
+
+    function goHome() {
+    clearInterval(gameInterval);
+
+    document.querySelectorAll(".item").forEach(item => item.remove());
+
+    document.getElementById("gameScreen").style.display = "none";
+    document.getElementById("mainScreen").style.display = "block";
+    }
+
+    // 키보드 이동
+    document.addEventListener("keydown", (e) => {
+    if (document.getElementById("gameScreen").style.display !== "block") return;
+
+    if (e.key === "ArrowLeft") {
+        basketX -= 35;
+    }
+
+    if (e.key === "ArrowRight") {
+        basketX += 35;
+    }
+
+    basketX = Math.max(0, Math.min(gameArea.clientWidth - 80, basketX));
+    basket.style.left = basketX + "px";
+    });
+
+    // 모바일 드래그
+    gameArea.addEventListener("touchmove", (e) => {
+    const rect = gameArea.getBoundingClientRect();
+    basketX = e.touches[0].clientX - rect.left - 40;
+
+    basketX = Math.max(0, Math.min(gameArea.clientWidth - 80, basketX));
+    basket.style.left = basketX + "px";
+
+    e.preventDefault();
+    });
+ </script>
+
+</body>
+</html>
+
