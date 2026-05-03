@@ -12,8 +12,9 @@
       background: #f5f5f5;
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       padding: 2rem 1rem;
     }
 
@@ -108,6 +109,17 @@
     .success .icon { font-size: 3rem; margin-bottom: 1rem; }
     .success h2 { font-size: 1.2rem; color: #111; margin-bottom: 0.5rem; }
     .success p { font-size: 0.9rem; color: #666; }
+
+    /* 댓글 영역 */
+    .comments {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 2rem;
+      width: 100%;
+      max-width: 520px;
+      margin-top: 1.5rem;
+    }
   </style>
 </head>
 <body>
@@ -181,6 +193,24 @@
       <p>담당자가 확인 후 영업일 기준 1~2일 내 연락드리겠습니다.</p>
     </div>
   </div>
+
+  <div class="comments">
+    <div id="disqus_thread"></div>
+  </div>
+
+  <script>
+    var disqus_config = function () {
+      this.page.url = 'https://mink-yung.github.io/vibe2026/contact.html';
+      this.page.identifier = 'vibe2026-contact';
+    };
+    (function() {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://ahang-1.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', +new Date());
+      (d.head || d.body).appendChild(s);
+    })();
+  </script>
+  <noscript>댓글을 보려면 JavaScript를 활성화해 주세요. <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 
   <script>
     const form = document.getElementById('contact-form');
