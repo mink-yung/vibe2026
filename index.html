@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>제휴 문의</title>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7957921688962472"
-     crossorigin="anonymous"></script>
+    crossorigin="anonymous"></script>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-QE998Y2NR8"></script>
   <script>
@@ -109,7 +109,6 @@
     button[type="submit"]:hover { background: #4c56c0; }
     button[type="submit"]:active { background: #3d46a8; }
 
-    /* 전송 완료 메시지 */
     .success {
       display: none;
       text-align: center;
@@ -120,7 +119,6 @@
     .success h2 { font-size: 1.2rem; color: #111; margin-bottom: 0.5rem; }
     .success p { font-size: 0.9rem; color: #666; }
 
-    /* 댓글 영역 */
     .comments {
       background: #fff;
       border-radius: 12px;
@@ -134,7 +132,6 @@
 </head>
 <body>
   <div class="card">
-    <!-- 폼 -->
     <div id="form-wrap">
       <h1>제휴 문의</h1>
       <p class="subtitle">아래 내용을 작성해 주시면 빠르게 검토 후 연락드리겠습니다.</p>
@@ -187,16 +184,13 @@
           ></textarea>
         </div>
 
-        <!-- Formspree 스팸 방지 (honeypot) -->
         <input type="text" name="_gotcha" style="display:none" />
-        <!-- 제출 후 리다이렉트 없이 현재 페이지 유지 (AJAX 사용 시 불필요) -->
         <input type="hidden" name="_subject" value="[제휴 문의] 새 문의가 도착했습니다" />
 
         <button type="submit">문의 보내기</button>
       </form>
     </div>
 
-    <!-- 전송 완료 메시지 -->
     <div class="success" id="success-msg">
       <div class="icon">✅</div>
       <h2>문의가 접수되었습니다!</h2>
