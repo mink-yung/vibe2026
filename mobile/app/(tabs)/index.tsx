@@ -12,7 +12,7 @@ import {
 import { useState } from "react";
 
 // Cloudflare Worker 배포 후 URL을 교체하세요
-const WORKER_URL = "https://YOUR_WORKER.workers.dev";
+const WORKER_URL = "https://week5app.hearang3180.workers.dev";
 
 const FACE_SHAPES = ["계란형", "둥근형", "각진형", "하트형", "긴형", "다이아몬드형"];
 
