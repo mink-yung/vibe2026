@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 면접 준비 플랫폼</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; }
+    .sidebar { width: 200px; min-height: 100vh; background: #fff; border-right: 1px solid #e9ecef; display: flex; flex-direction: column; padding: 20px 12px; position: fixed; top: 0; left: 0; bottom: 0; }
+    .logo-box { border: 1.5px solid #adb5bd; border-radius: 6px; padding: 5px 12px; font-size: 13px; font-weight: 600; color: #495057; display: inline-block; margin-bottom: 24px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #6c757d; cursor: pointer; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left; }
+    .nav-item:hover { background: #f1f3f5; }
+    .nav-item.active { background: #e7f5ff; color: #1971c2; font-weight: 600; }
+    .nav-icon { font-size: 15px; width: 20px; text-align: center; }
+    .main { margin-left: 200px; min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar { display: flex; justify-content: flex-end; align-items: center; padding: 12px 28px; background: #fff; border-bottom: 1px solid #e9ecef; }
+    .btn-join { padding: 6px 16px; border: 1.5px solid #ced4da; border-radius: 20px; font-size: 13px; color: #495057; background: #fff; cursor: pointer; }
+    .btn-join:hover { background: #f8f9fa; }
+    .content { padding: 24px 28px; flex: 1; }
+    .hero { background: #fff; border-radius: 16px; padding: 60px 56px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .hero h1 { font-size: 40px; font-weight: 800; color: #212529; line-height: 1.35; margin: 0 0 16px; }
+    .hero p { font-size: 15px; color: #868e96; line-height: 1.8; margin: 0 0 28px; }
+    .hero-btns { display: flex; gap: 10px; }
+    .btn-primary { padding: 10px 20px; background: #212529; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-primary:hover { background: #343a40; }
+    .btn-secondary { padding: 10px 20px; background: #fff; color: #495057; border: 1.5px solid #ced4da; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .btn-secondary:hover { background: #f8f9fa; }
+    .cards-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .card { background: #fff; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .card-title { font-size: 13px; font-weight: 700; color: #343a40; }
+    .card-more { font-size: 11.5px; color: #adb5bd; cursor: pointer; text-decoration: none; }
+    .card-more:hover { color: #339af0; }
+    .analysis-body { display: flex; align-items: center; gap: 12px; }
+    .score-box { flex: 1; text-align: center; }
+    .score-label { font-size: 11px; color: #adb5bd; margin-bottom: 4px; }
+    .score-num { font-size: 32px; font-weight: 800; color: #212529; line-height: 1; }
+    .score-total { font-size: 12px; color: #adb5bd; }
+    .score-diff { font-size: 11px; color: #339af0; margin-top: 6px; font-weight: 600; }
+    .feedback-item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 14px; }
+    .feedback-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+    .icon-green { background: #d3f9d8; color: #2f9e44; }
+    .icon-orange { background: #ffe8cc; color: #e8590c; }
+    .icon-blue { background: #d0ebff; color: #1971c2; }
+    .feedback-title { font-size: 11.5px; font-weight: 700; color: #495057; margin-bottom: 3px; }
+    .feedback-text { font-size: 11.5px; color: #868e96; line-height: 1.5; }
+    .feedback-link { font-size: 11.5px; color: #339af0; cursor: pointer; }
+    .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .record-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f3f5; }
+    .record-item:last-child { border-bottom: none; }
+    .record-name { font-size: 12.5px; font-weight: 600; color: #343a40; }
+    .record-date { font-size: 11px; color: #adb5bd; margin-top: 2px; }
+    .score-badge { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #fff; flex-shrink: 0; }
+    .guide-desc { font-size: 12px; color: #adb5bd; margin-bottom: 14px; line-height: 1.6; }
+    .guide-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 8px; background: #f8f9fa; margin-bottom: 8px; cursor: pointer; }
+    .guide-item:hover { background: #e7f5ff; }
+    .guide-name { font-size: 12.5px; color: #343a40; }
+    .tag { font-size: 10.5px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .tag-hot { background: #fff0f6; color: #c2255c; }
+    .tag-rec { background: #e7f5ff; color: #1971c2; }
+    .tag-new { background: #ebfbee; color: #2f9e44; }
+    .float-card { position: fixed; bottom: 24px; left: 16px; width: 180px; background: #fff; border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); padding: 16px; border: 1px solid #f1f3f5; }
+    .float-icon { font-size: 18px; margin-bottom: 8px; }
+    .float-title { font-size: 12px; font-weight: 700; color: #343a40; margin-bottom: 5px; }
+    .float-desc { font-size: 11px; color: #868e96; line-height: 1.6; margin-bottom: 10px; }
+    .float-link { font-size: 11.5px; color: #339af0; font-weight: 600; cursor: pointer; }
+    .theme-btns { display: flex; gap: 12px; padding: 12px 8px 0; border-top: 1px solid #f1f3f5; margin-top: auto; }
+    .theme-btn { font-size: 18px; background: none; border: none; cursor: pointer; opacity: 0.4; }
+    .theme-btn.on { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- 사이드바 -->
+<div class="sidebar">
+  <div class="logo-box">웹 이름</div>
+  <nav>
+    <button class="nav-item active" onclick="setActive(this)">
+      <span class="nav-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </span> 홈
+    </button>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </span> 모의면접
+    </button>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </span> AI 피드백
+    </button>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </span> 면접기록
+    </button>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </span> 명칭태도분석
+    </button>
+    <button class="nav-item" onclick="setActive(this)">
+      <span class="nav-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </span> 학습가이드
+    </button>
+  </nav>
+  <div class="theme-btns">
+    <button class="theme-btn on">☀️</button>
+    <button class="theme-btn">🌙</button>
+  </div>
+</div>
+
+<!-- 메인 -->
+<div class="main">
+  <div class="topbar">
+    <button class="btn-join">회원가입</button>
+  </div>
+  <div class="content">
+
+    <!-- 히어로 -->
+    <div class="hero">
+      <h1>세가지 시선, 냉철한 피드백<br>흔들리지 않는 면접 자신감</h1>
+      <p>실제 면접과 같은 환경에서 연습하고,<br>AI 피드백으로 실력을 향상시켜보세요.</p>
+      <div class="hero-btns">
+        <button class="btn-primary">모의면접 시작하기 →</button>
+        <button class="btn-secondary">면접 가이드 보기</button>
+      </div>
+    </div>
+
+    <!-- 분석 카드 3개 -->
+    <div class="cards-row">
+
+      <!-- 면접 레포 분석 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">면접 태도 분석</span>
+          <a class="card-more">자세히 보기 &gt;</a>
+        </div>
+        <div class="analysis-body">
+          <svg width="120" height="120" viewBox="0 0 120 120" id="radar1"></svg>
+          <div class="score-box">
+            <div class="score-label">종합 점수</div>
+            <div class="score-num">85</div>
+            <div class="score-total">/100</div>
+            <div class="score-diff">지난 분석 대비 ▲ 12</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 역량 분석 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">역량 분석</span>
+          <a class="card-more">자세히 보기 &gt;</a>
+        </div>
+        <div class="analysis-body">
+          <svg width="120" height="120" viewBox="0 0 120 120" id="radar2"></svg>
+          <div class="score-box">
+            <div class="score-label">종합 점수</div>
+            <div class="score-num">85</div>
+            <div class="score-total">/100</div>
+            <div class="score-diff">지난 분석 대비 ▲ 12</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 피드백 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">AI 피드백 한눈에 보기</span>
+          <a class="card-more">자세히 보기 &gt;</a>
+        </div>
+        <div class="feedback-item">
+          <div class="feedback-icon icon-green">✓</div>
+          <div>
+            <div class="feedback-title">강점</div>
+            <div class="feedback-text">논리적인 답변 구성이 인상적이에요.</div>
+          </div>
+        </div>
+        <div class="feedback-item">
+          <div class="feedback-icon icon-orange">!</div>
+          <div>
+            <div class="feedback-title">보완점</div>
+            <div class="feedback-text">시선 처리를 조금 더 의식해보세요.</div>
+          </div>
+        </div>
+        <div class="feedback-item">
+          <div class="feedback-icon icon-blue">▶</div>
+          <div>
+            <div class="feedback-title">추천 학습</div>
+            <div class="feedback-link">답변 구조화 강의 보기</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 하단 2열 -->
+    <div class="bottom-row">
+
+      <!-- 최근 면접 기록 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">최근 면접 기록</span>
+          <a class="card-more">더보기 &gt;</a>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; text-align:center; margin-top:60px;">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#343a40;margin-bottom:10px;">최종 모의면접</div>
+            <div style="font-size:26px;font-weight:800;color:#212529;line-height:1;">85</div>
+            <div style="font-size:10px;color:#adb5bd;margin-top:4px;">2024.05.08</div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#343a40;margin-bottom:10px;">3회차</div>
+            <div style="font-size:26px;font-weight:800;color:#212529;line-height:1;">78</div>
+            <div style="font-size:10px;color:#adb5bd;margin-top:4px;">2024.05.05</div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#343a40;margin-bottom:10px;">2회차</div>
+            <div style="font-size:26px;font-weight:800;color:#212529;line-height:1;">92</div>
+            <div style="font-size:10px;color:#adb5bd;margin-top:4px;">2024.05.05</div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#343a40;margin-bottom:10px;">1회차</div>
+            <div style="font-size:26px;font-weight:800;color:#212529;line-height:1;">81</div>
+            <div style="font-size:10px;color:#adb5bd;margin-top:4px;">2024.05.03</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 면접 준비 가이드 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">면접 준비 가이드</span>
+          <a class="card-more">더보기 &gt;</a>
+        </div>
+        <div class="guide-desc">면접에서 자주 묻는 질문과<br>답변 팁을 확인해보세요.</div>
+        <div class="guide-item">
+          <span class="guide-name">자기소개서 작성법</span>
+          <span class="tag tag-hot">인기</span>
+        </div>
+        <div class="guide-item">
+          <span class="guide-name">압박면접 대처 전략</span>
+          <span class="tag tag-rec">추천</span>
+        </div>
+        <div class="guide-item">
+          <span class="guide-name">직무별 예상 질문 모음</span>
+          <span class="tag tag-new">NEW</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 플로팅 카드 -->
+<div class="float-card">
+  <div class="float-icon">⚡</div>
+  <div class="float-title">AI 면접이 처음인가요?</div>
+  <div class="float-desc">서비스 가이드를 통해 인터뷰 AI를 100% 활용해보세요.</div>
+  <div class="float-link">가이드 보기 →</div>
+</div>
+
+<script>
+function setActive(btn) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function drawRadar(id, labels, values) {
+  const svg = document.getElementById(id);
+  const C = 60, R = 42, n = labels.length;
+  const ns = 'http://www.w3.org/2000/svg';
+
+  const pt = (i, r) => {
+    const a = (Math.PI * 2 * i) / n - Math.PI / 2;
+    return [C + r * Math.cos(a), C + r * Math.sin(a)];
+  };
+
+  // 그리드
+  [0.3, 0.55, 0.8, 1].forEach(lv => {
+    const pts = Array.from({length: n}, (_, i) => pt(i, R * lv));
+    const el = document.createElementNS(ns, 'path');
+    el.setAttribute('d', pts.map(([x,y], i) => `${i?'L':'M'}${x.toFixed(1)},${y.toFixed(1)}`).join('') + 'Z');
+    el.setAttribute('fill', lv < 1 ? 'rgba(248,249,250,0.8)' : 'none');
+    el.setAttribute('stroke', '#dee2e6');
+    el.setAttribute('stroke-width', '1');
+    svg.appendChild(el);
+  });
+
+  // 축
+  for (let i = 0; i < n; i++) {
+    const [x, y] = pt(i, R);
+    const ln = document.createElementNS(ns, 'line');
+    ln.setAttribute('x1', C); ln.setAttribute('y1', C);
+    ln.setAttribute('x2', x.toFixed(1)); ln.setAttribute('y2', y.toFixed(1));
+    ln.setAttribute('stroke', '#dee2e6'); ln.setAttribute('stroke-width', '1');
+    svg.appendChild(ln);
+  }
+
+  // 데이터
+  const dpts = values.map((v, i) => pt(i, (v / 100) * R));
+  const dp = document.createElementNS(ns, 'path');
+  dp.setAttribute('d', dpts.map(([x,y], i) => `${i?'L':'M'}${x.toFixed(1)},${y.toFixed(1)}`).join('') + 'Z');
+  dp.setAttribute('fill', 'rgba(173,181,189,0.45)');
+  dp.setAttribute('stroke', '#868e96');
+  dp.setAttribute('stroke-width', '2');
+  svg.appendChild(dp);
+
+  // 라벨
+  labels.forEach((lb, i) => {
+    const [x, y] = pt(i, R + 13);
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', x.toFixed(1)); t.setAttribute('y', y.toFixed(1));
+    t.setAttribute('text-anchor', 'middle'); t.setAttribute('dominant-baseline', 'middle');
+    t.setAttribute('font-size', '8'); t.setAttribute('fill', '#868e96');
+    t.setAttribute('font-family', 'sans-serif');
+    t.textContent = lb;
+    svg.appendChild(t);
+  });
+}
+
+drawRadar('radar1', ['끌림','망양','자태명성','달가뇨','시선'], [72,58,76,63,80]);
+drawRadar('radar2', ['의사소통','논리적사고','자신감','문제해결력','팀워크'], [78,74,63,68,84]);
+</script>
+</body>
+</html>
