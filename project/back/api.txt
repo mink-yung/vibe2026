@@ -1,0 +1,19 @@
+| 기능           | API                                   | 설명              |
+| ------------ | ------------------------------------- | --------------- |
+| 회원가입         | `POST /api/auth/register`             | 사용자 계정 생성       |
+| 로그인          | `POST /api/auth/login`                | 로그인 후 토큰 발급     |
+| 페르소나 목록 조회   | `GET /api/personas`                   | 친절/까칠/압박 목록 조회  |
+| 빠른면접 피드백     | `POST /api/interviews/quick`          | 친절 페르소나로 바로 피드백 |
+| 기본면접 피드백     | `POST /api/interviews/basic`          | 친절 페르소나 자동 선택   |
+| 실전면접 피드백     | `POST /api/interviews/real`           | 친절+까칠+압박 3명 피드백 |
+| 면접기록 조회      | `GET /api/interviews/history`         | 내가 했던 면접 목록 조회  |
+| 면접 분석 조회  | `GET /api/interviews/recent/analysis` | 최근 면접 분석 결과 조회  |
+| AI 피드백 요약 조회 | `GET /api/interviews/recent/summary`  | 최근 피드백 요약 조회    |
+| 내 정보 조회 | `GET /api/auth/me` | 로그인한 사용자 정보 불러오기 |
+
+/api/interviews/quick
+/api/interviews/basic
+/api/interviews/real
+/api/interviews/history
+/api/interviews/recent/analysis
+/api/interviews/recent/summary

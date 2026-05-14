@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>회원가입 · AI 면접 준비 플랫폼</title>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <button type="button" class="auth-back" onclick="location.href='dashboard.html'">← 대시보드로</button>
+      <h1 class="auth-card-title">회원가입</h1>
+      <p class="auth-card-desc">면접 연습과 AI 피드백을 위해 계정을 만드세요.</p>
+      <form class="auth-form" id="signupForm" onsubmit="handleSignupSubmit(event)">
+        <div id="signup-error" class="auth-alert auth-alert-error" role="alert" hidden></div>
+        <label class="auth-label" for="signup-name">이름</label>
+        <input type="text" id="signup-name" class="auth-input" name="name" autocomplete="name" required placeholder="홍길동" />
+
+        <label class="auth-label" for="signup-email">이메일</label>
+        <input type="email" id="signup-email" class="auth-input" name="email" autocomplete="email" required placeholder="you@example.com" />
+
+        <label class="auth-label" for="signup-password">비밀번호</label>
+        <input type="password" id="signup-password" class="auth-input" name="password" autocomplete="new-password" required minlength="8" placeholder="8자 이상" />
+
+        <label class="auth-label" for="signup-password2">비밀번호 확인</label>
+        <input type="password" id="signup-password2" class="auth-input" name="password2" autocomplete="new-password" required placeholder="비밀번호 재입력" />
+
+        <label class="auth-check">
+          <input type="checkbox" id="signup-terms" required />
+          <span>서비스 이용약관 및 개인정보 처리방침에 동의합니다.</span>
+        </label>
+
+        <button type="submit" class="btn-primary auth-submit">가입하기</button>
+      </form>
+      <p class="auth-switch">이미 계정이 있으신가요? <a href="dashboard.html#login">로그인</a></p>
+    </div>
+  </div>
+  <script>
+    function getSignupErrorEl() {
+      return document.getElementById('signup-error');
+    }
+    function setSignupError(msg) {
+      var el = getSignupErrorEl();
+      if (!el) return;
+      el.textContent = msg || '가입에 실패했습니다.';
+      el.hidden = false;
+    }
+    function clearSignupError() {
+      var el = getSignupErrorEl();
+      if (!el) return;
+      el.textContent = '';
+      el.hidden = true;
+    }
+    function pickSignupErrorMessage(data) {
+      if (!data || typeof data !== 'object') return '가입 요청을 처리할 수 없습니다.';
+      if (typeof data.message === 'string' && data.message.trim()) return data.message.trim();
+      if (typeof data.detail === 'string' && data.detail.trim()) return data.detail.trim();
+      if (typeof data.error === 'string' && data.error.trim()) return data.error.trim();
+      return '가입 요청을 처리할 수 없습니다.';
+    }
+    async function handleSignupSubmit(e) {
+      e.preventDefault();
+      clearSignupError();
+      var p = document.getElementById('signup-password').value;
+      var p2 = document.getElementById('signup-password2').value;
+      if (p !== p2) {
+        setSignupError('비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      var email = document.getElementById('signup-email').value.trim();
+      var password = p;
+      var name = document.getElementById('signup-name').value.trim();
+      var submitBtn = e.target.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+      try {
+        var response = await fetch('http://localhost:3000/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password,
+            name: name,
+          }),
+        });
+        var data = await response.json().catch(function () { return {}; });
+        if (!response.ok) {
+          setSignupError(pickSignupErrorMessage(data));
+          return;
+        }
+        if (data && data.success === false) {
+          setSignupError(pickSignupErrorMessage(data));
+          return;
+        }
+        location.href = 'dashboard.html#login';
+      } catch (err) {
+        console.error(err);
+        setSignupError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+#videoInterviewSection { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #fff; }
+
+/* 전체 레이아웃 */
+#videoInterviewSection .vi-wrap { display: flex; flex-direction: column; height: 100%; background: #111; }
+
+/* 상단 바 */
+#videoInterviewSection .vi-topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; background: #1a1a1a; border-bottom: 1px solid #2a2a2a; flex-shrink: 0; }
+#videoInterviewSection .vi-topbar-left { display: flex; align-items: center; gap: 12px; }
+#videoInterviewSection .vi-badge { font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; border: 1.5px solid #fff; color: #fff; }
+#videoInterviewSection .vi-topbar-center { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #ccc; }
+#videoInterviewSection .vi-q-info { font-weight: 700; color: #fff; }
+#videoInterviewSection .vi-divider { color: #444; }
+#videoInterviewSection .vi-timer { color: #ccc; }
+#videoInterviewSection .vi-topbar-right { display: flex; align-items: center; }
+#videoInterviewSection .vi-end-btn { display: flex; align-items: center; gap: 6px; background: #e03131; border: none; color: #fff; font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 8px; cursor: pointer; }
+#videoInterviewSection .vi-end-btn:hover { background: #c92a2a; }
+
+/* 영상 영역 */
+#videoInterviewSection .vi-videos { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#videoInterviewSection .vi-video-wrap { position: relative; flex: 1; }
+#videoInterviewSection .vi-video-wrap.user { flex: 0 0 35%; }
+#videoInterviewSection .vi-video-bg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+#videoInterviewSection .interviewer-bg { background: #1c1c1c; }
+#videoInterviewSection .user-bg { background: #2a2a2a; border-top: 2px solid #333; }
+#videoInterviewSection .vi-avatar { opacity: 0.3; }
+#videoInterviewSection .vi-video-label { position: absolute; top: 14px; left: 16px; font-size: 12px; font-weight: 600; color: #fff; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 20px; backdrop-filter: blur(4px); }
+
+/* 질문 오버레이 */
+#videoInterviewSection .vi-question-overlay { position: absolute; top: 56px; left: 16px; right: 16px; display: flex; align-items: flex-start; gap: 10px; background: rgba(0,0,0,0.65); border-radius: 12px; padding: 14px 18px; backdrop-filter: blur(6px); }
+#videoInterviewSection .vi-question-label { font-size: 13px; font-weight: 700; color: #ccc; white-space: nowrap; flex-shrink: 0; }
+#videoInterviewSection .vi-question-text { font-size: 14px; color: #fff; font-weight: 500; line-height: 1.6; }
+
+/* 하단 컨트롤 */
+#videoInterviewSection .vi-controls { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: #1a1a1a; border-top: 1px solid #2a2a2a; flex-shrink: 0; }
+#videoInterviewSection .vi-controls-center { display: flex; gap: 16px; align-items: center; }
+#videoInterviewSection .vi-controls-right { min-width: 160px; display: flex; justify-content: flex-end; }
+#videoInterviewSection .vi-ctrl-btn { display: flex; flex-direction: column; align-items: center; gap: 5px; background: #2c2c2c; border: none; color: #ccc; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-size: 11px; transition: background 0.15s; }
+#videoInterviewSection .vi-ctrl-btn:hover { background: #3a3a3a; color: #fff; }
+#videoInterviewSection .vi-ctrl-btn.end { background: #e03131; color: #fff; }
+#videoInterviewSection .vi-ctrl-btn.end:hover { background: #c92a2a; }

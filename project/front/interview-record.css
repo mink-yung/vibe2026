@@ -1,0 +1,45 @@
+.ir-page { padding: 28px 36px; }
+
+/* 헤더 */
+.ir-header { margin-bottom: 24px; }
+.ir-title { font-size: 22px; font-weight: 800; color: #212529; margin-bottom: 4px; }
+.ir-subtitle { font-size: 13px; color: #868e96; }
+
+/* 요약 통계 */
+.ir-section-label { font-size: 12px; font-weight: 700; color: #adb5bd; letter-spacing: 0.04em; margin-bottom: 10px; }
+.ir-stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+.ir-stat-card { background: #fff; border-radius: 14px; padding: 16px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.ir-stat-label { font-size: 11.5px; color: #adb5bd; font-weight: 600; margin-bottom: 8px; }
+.ir-stat-value { font-size: 28px; font-weight: 800; color: #212529; line-height: 1; }
+.ir-stat-value span { font-size: 13px; font-weight: 500; color: #868e96; margin-left: 2px; }
+.ir-stat-sm { font-size: 20px; }
+.ir-stat-sub { font-size: 11px; color: #adb5bd; font-weight: 500; margin-top: 6px; }
+
+/* 유형별 평균 */
+.ir-type-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.ir-type-card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.ir-type-name { font-size: 13px; font-weight: 700; color: #343a40; }
+.ir-type-label { font-size: 11.5px; color: #adb5bd; }
+
+/* 테이블 */
+.ir-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ir-table th { text-align: left; padding: 10px 14px; color: #adb5bd; font-size: 11.5px; font-weight: 600; border-bottom: 1.5px solid #f1f3f5; }
+.ir-table td { padding: 13px 14px; border-bottom: 1px solid #f8f9fa; color: #343a40; vertical-align: middle; }
+.ir-table tbody tr:last-child td { border-bottom: none; }
+.ir-table tbody tr:hover { background: #f8f9fa; }
+
+.ir-date { font-weight: 600; color: #212529; }
+.ir-day { font-size: 11px; color: #adb5bd; margin-left: 4px; font-weight: 400; }
+
+.ir-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; }
+.ir-badge.quick { background: #d0ebff; color: #1971c2; }
+.ir-badge.basic { background: #d3f9d8; color: #2f9e44; }
+.ir-badge.deep { background: #e5dbff; color: #6741d9; }
+
+.ir-score { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+.ir-score.s-green { background: #d3f9d8; color: #2f9e44; }
+.ir-score.s-blue { background: #d0ebff; color: #1971c2; }
+.ir-score.s-orange { background: #ffe8cc; color: #e8590c; }
+
+.ir-time { color: #868e96; font-size: 12.5px; }
+.ir-category { color: #495057; font-size: 12.5px; }
