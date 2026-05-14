@@ -139,6 +139,181 @@ function renderAnalysis(data) {
   drawCompetencyRadar('an-competency-radar', competency.radarLabels, competency.radarValues, competency.radarScores, 10);
 }
 
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function overallScoreToScore50(overallScore) {
+  const n = Number(overallScore);
+  if (Number.isNaN(n)) return null;
+  return Math.max(0, Math.min(50, Math.round((n * 50) / 100)));
+}
+
+function setAnalysisRingGauge(circleId, score50) {
+  const el = document.getElementById(circleId);
+  if (!el || score50 == null) return;
+  const c = 264;
+  const pct = Math.max(0, Math.min(1, score50 / 50));
+  el.setAttribute('stroke-dasharray', `${(c * pct).toFixed(1)} ${(c * (1 - pct)).toFixed(1)}`);
+}
+
+function radarValuesFromOverall100(overallScore, len) {
+  const n = Number(overallScore);
+  const base = Number.isNaN(n) ? 7 : Math.min(10, Math.max(5, Math.round(n / 10)));
+  return Array.from({ length: len }, (_, i) => Math.min(10, Math.max(5, base + ((i % 3) - 1))));
+}
+
+/** API mode → 면접 기록·네비와 동일한 표기 */
+function interviewModeLabelKo(mode) {
+  if (mode == null || String(mode).trim() === '') return '';
+  const m = String(mode).trim().toLowerCase();
+  if (m === 'quick') return '빠른면접';
+  if (m === 'basic') return '기본면접';
+  if (m === 'real') return '실전면접';
+  return escapeHtml(String(mode).trim());
+}
+
+function renderInterviewAnalysisApiTextBlock(t) {
+  const sumEl = document.getElementById('an-api-summary');
+  const listsEl = document.getElementById('an-api-lists');
+  if (!sumEl || !listsEl) return;
+  const sumL = (t.summaryLine && String(t.summaryLine).trim()) || '';
+  const rec = (t.recommendation && String(t.recommendation).trim()) || '';
+  const body = [];
+  if (sumL) body.push(sumL);
+  if (rec && rec !== sumL) body.push(rec);
+  sumEl.textContent = body.length ? body.join('\n\n') : '표시할 요약이 없습니다.';
+  const section = (title, arr) => {
+    if (!Array.isArray(arr) || !arr.length) return '';
+    const items = arr
+      .map(x => `<li style="margin:6px 0;color:#495057;font-size:14px;line-height:1.5;">${escapeHtml(String(x))}</li>`)
+      .join('');
+    return `<div style="margin-top:10px;"><div style="font-size:12px;font-weight:700;color:#212529;margin-bottom:6px;">${escapeHtml(title)}</div><ul style="margin:0;padding-left:18px;">${items}</ul></div>`;
+  };
+  listsEl.innerHTML =
+    section('강점', t.strengths) +
+    section('보완점', t.weaknesses) +
+    (t.mode
+      ? `<p style="margin-top:14px;font-size:12px;color:#868e96;">최근 모드: ${interviewModeLabelKo(t.mode)}</p>`
+      : '');
+}
+
+/** GET /api/interviews/recent/analysis (+요약) → 면접분석 단독 페이지 */
+function mergeAnalysisPageFromApiPayload(apiAnalysis, summaryFromSummaryEndpoint) {
+  const a = apiAnalysis || {};
+  const overall = a.overallScore;
+  const score50 = overallScoreToScore50(overall);
+  const attLabels = ['표정', '시선', '자세 안정성', '억양', '말하기 속도'];
+  const compLabels = ['의사소통', '직무역량', '자신감', '논리적사고', '문제해결력'];
+  const attVals = radarValuesFromOverall100(overall, attLabels.length);
+  const compVals = radarValuesFromOverall100((Number(overall) || 75) - 2, compLabels.length);
+  const dt = a.createdAt ? new Date(a.createdAt) : null;
+  let dateStr = '-';
+  if (dt && !Number.isNaN(dt.getTime())) {
+    dateStr = `${dt.getFullYear()}.${String(dt.getMonth() + 1).padStart(2, '0')}.${String(dt.getDate()).padStart(2, '0')}`;
+  }
+  const compScore50 = score50 != null ? Math.max(0, Math.min(50, score50 - 2)) : null;
+  Object.assign(analysisData, {
+    attitude: {
+      avg: score50,
+      diff: null,
+      score: score50,
+      date: dateStr,
+      radarLabels: attLabels,
+      radarValues: attVals,
+      radarScores: attVals.map(v => `${v}/10`),
+      lineChart: null,
+    },
+    competency: {
+      avg: compScore50,
+      diff: null,
+      score: compScore50,
+      date: dateStr,
+      radarLabels: compLabels,
+      radarValues: compVals,
+      radarScores: compVals.map(v => `${v}/10`),
+      lineChart: null,
+    },
+  });
+  renderAnalysis(analysisData);
+  setAnalysisRingGauge('an-attitude-gauge', score50);
+  setAnalysisRingGauge('an-competency-gauge', compScore50);
+  renderInterviewAnalysisApiTextBlock({
+    strengths: a.strengths,
+    weaknesses: a.weaknesses,
+    recommendation: a.recommendation,
+    summaryLine: summaryFromSummaryEndpoint,
+    mode: a.mode,
+  });
+}
+
+function formatFeedbackDateKey(iso) {
+  const d = iso ? new Date(iso) : new Date();
+  if (Number.isNaN(d.getTime())) return '—';
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+}
+
+async function loadAiFeedbackPageFromApi() {
+  if (document.body.getAttribute('data-page') !== 'ai-feedback') return;
+  if (typeof getStoredAuthToken !== 'function' || !getStoredAuthToken()) {
+    const sum = document.getElementById('fbSummary');
+    if (sum) sum.textContent = '로그인 후 최근 면접 피드백을 불러올 수 있습니다.';
+    return;
+  }
+  try {
+    const [ar, sr] = await Promise.all([apiGetInterviewsRecentAnalysis(), apiGetInterviewsRecentSummary()]);
+    if (ar.status === 401 || sr.status === 401) {
+      if (typeof clearStoredAuth === 'function') clearStoredAuth();
+      location.href = 'dashboard.html#login';
+      return;
+    }
+    const aj = ar.ok ? await ar.json().catch(() => ({})) : {};
+    if (!ar.ok && ar.status === 404) {
+      const sum = document.getElementById('fbSummary');
+      if (sum) sum.textContent = aj.message || '아직 면접 기록이 없습니다.';
+      return;
+    }
+    if (!ar.ok) {
+      const sum = document.getElementById('fbSummary');
+      if (sum) sum.textContent = aj.message || '피드백을 불러오지 못했습니다.';
+      return;
+    }
+    const analysis = aj.analysis || {};
+    const sj = sr.ok ? await sr.json().catch(() => ({})) : {};
+    const summaryLine = (sj.summary && String(sj.summary).trim()) || '';
+    const recommend = (analysis.recommendation && String(analysis.recommendation).trim()) || summaryLine;
+    const createdAtStr = formatFeedbackDateKey(sj.createdAt || analysis.createdAt);
+    const strengths = (analysis.strengths || []).map(s => ({ title: String(s), desc: '' }));
+    const weaknesses = (analysis.weaknesses || []).map(s => ({ title: String(s), desc: '' }));
+    const summaryTop =
+      summaryLine ||
+      recommend ||
+      '최근 면접 분석이 있습니다. 아래 강점·보완점을 확인해 보세요.';
+    feedbackData = {
+      [createdAtStr]: {
+        summary: summaryTop,
+        strengths: strengths.length ? strengths : [{ title: '—', desc: '등록된 강점 문구가 없습니다.' }],
+        weaknesses: weaknesses.length ? weaknesses : [{ title: '—', desc: '등록된 보완 문구가 없습니다.' }],
+        recommends: recommend ? [{ title: recommend, link: '' }] : [{ title: '추가 코멘트가 없습니다.', link: '' }],
+      },
+    };
+    currentFeedbackDate = createdAtStr;
+    renderFeedback(feedbackData);
+  } catch (e) {
+    if (e && e.message === 'LOGIN_REQUIRED') {
+      location.href = 'dashboard.html#login';
+      return;
+    }
+    const sum = document.getElementById('fbSummary');
+    if (sum) sum.textContent = '서버와 통신할 수 없습니다.';
+  }
+}
+
 renderAnalysis(analysisData);
 
 // API에서 받아온 데이터를 여기에 채우면 됩니다
@@ -482,9 +657,9 @@ function drawModalRadar(svgId, labels, values, scores, maxVal) {
   });
 }
 
-// AI 피드백 모달
+// AI 피드백 모달 · ai-feedback.html (`data-page="ai-feedback"`)에서 API로 채움
 // 예: { '2024.05.10': { summary:'...', strengths:[{title,desc},...], weaknesses:[...], recommends:[{title,link},...] }, ... }
-const feedbackData = null;
+let feedbackData = null;
 
 let currentFeedbackDate = null;
 
@@ -550,20 +725,20 @@ function renderFeedbackContent(date) {
   const rc = document.getElementById('fbRecommends');
   if (!sum || !st || !wk || !rc || !data) return;
   sum.textContent = data.summary;
-  st.innerHTML = data.strengths.map(i => `
+  st.innerHTML = (data.strengths || []).map(i => `
     <div class="fb-item">
       <div class="fb-item-dot"></div>
-      <div><div class="fb-item-title">${i.title}</div><div class="fb-item-text">${i.desc}</div></div>
+      <div><div class="fb-item-title">${escapeHtml(i.title)}</div><div class="fb-item-text">${escapeHtml(i.desc)}</div></div>
     </div>`).join('');
-  wk.innerHTML = data.weaknesses.map(i => `
+  wk.innerHTML = (data.weaknesses || []).map(i => `
     <div class="fb-item">
       <div class="fb-item-dot"></div>
-      <div><div class="fb-item-title">${i.title}</div><div class="fb-item-text">${i.desc}</div></div>
+      <div><div class="fb-item-title">${escapeHtml(i.title)}</div><div class="fb-item-text">${escapeHtml(i.desc)}</div></div>
     </div>`).join('');
-  rc.innerHTML = data.recommends.map(i => `
+  rc.innerHTML = (data.recommends || []).map(i => `
     <div class="fb-item">
       <div class="fb-item-dot"></div>
-      <div class="fb-item-text">${i.title}</div>
+      <div class="fb-item-text">${escapeHtml(i.title)}</div>
     </div>`).join('');
 }
 
@@ -1018,17 +1193,66 @@ async function finishRealInterviewSubmit() {
   }
 })();
 
-/** `ai-feedback.html` 본문에 피드백 패널만 있을 때 탭·내용 채우기 */
+/** `ai-feedback.html`: API로 최근 분석·요약 로드 후 탭·본문 표시 */
 (function initAiFeedbackInlinePage() {
-  function run() {
+  async function run() {
     if (document.body.getAttribute('data-page') !== 'ai-feedback') return;
+    await loadAiFeedbackPageFromApi();
     if (!document.getElementById('fbDateTabs')) return;
-    if (!feedbackData) return;
-    const dates = Object.keys(feedbackData);
-    if (!dates.length) return;
-    if (!currentFeedbackDate) currentFeedbackDate = dates[0];
-    renderFeedbackTabs(dates);
+    if (!feedbackData || !Object.keys(feedbackData).length) return;
+    if (!currentFeedbackDate) currentFeedbackDate = Object.keys(feedbackData)[0];
+    renderFeedbackTabs(Object.keys(feedbackData));
     renderFeedbackContent(currentFeedbackDate);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
+})();
+
+/** `interview-analysis.html`: 면접분석 단독 페이지에 recent/analysis·summary 반영 */
+(function initInterviewAnalysisStandaloneApi() {
+  async function run() {
+    if (!document.getElementById('analysisSection') || document.getElementById('dashSection')) return;
+    const sumEl = document.getElementById('an-api-summary');
+    if (typeof getStoredAuthToken !== 'function' || !getStoredAuthToken()) {
+      if (sumEl) sumEl.textContent = '로그인 후 최근 면접 분석을 확인할 수 있습니다.';
+      const listsEl = document.getElementById('an-api-lists');
+      if (listsEl) {
+        listsEl.innerHTML =
+          '<p style="color:#868e96;font-size:13px;"><a href="dashboard.html#login" style="color:#339af0;font-weight:600;">로그인</a></p>';
+      }
+      return;
+    }
+    try {
+      const [ar, sr] = await Promise.all([apiGetInterviewsRecentAnalysis(), apiGetInterviewsRecentSummary()]);
+      if (ar.status === 401) {
+        if (typeof clearStoredAuth === 'function') clearStoredAuth();
+        location.href = 'dashboard.html#login';
+        return;
+      }
+      const aj = await ar.json().catch(() => ({}));
+      if (ar.status === 404) {
+        if (sumEl) sumEl.textContent = aj.message || '최근 면접 기록이 없습니다.';
+        const listsEl = document.getElementById('an-api-lists');
+        if (listsEl) listsEl.innerHTML = '';
+        return;
+      }
+      if (!ar.ok) {
+        if (sumEl) sumEl.textContent = aj.message || '분석을 불러오지 못했습니다.';
+        return;
+      }
+      const sj = sr.ok && sr.status !== 401 ? await sr.json().catch(() => ({})) : {};
+      const summaryLine = (sj.summary && String(sj.summary).trim()) || '';
+      mergeAnalysisPageFromApiPayload(aj.analysis, summaryLine);
+    } catch (e) {
+      if (e && e.message === 'LOGIN_REQUIRED') {
+        location.href = 'dashboard.html#login';
+        return;
+      }
+      if (sumEl) sumEl.textContent = '서버와 통신할 수 없습니다.';
+    }
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run);
