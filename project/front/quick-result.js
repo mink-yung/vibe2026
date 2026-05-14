@@ -50,4 +50,34 @@ function renderQuickResult(data) {
     </div>`).join('');
 }
 
-renderQuickResult(quickResultData);
+function buildQuickResultFromApiPayload(p) {
+  const score = p.overallScore != null ? Number(p.overallScore) : null;
+  const fb = p.feedback ? String(p.feedback) : '';
+  const qs = [];
+  if (p.summary) qs.push({ title: '요약', feedback: String(p.summary) });
+  if (fb) qs.push({ title: '피드백', feedback: fb });
+  if (p.nextQuestion) qs.push({ title: '다음 질문 제안', feedback: String(p.nextQuestion) });
+  return {
+    subtitle: '빠른면접 결과가 저장되었습니다.',
+    score,
+    tag: score != null && score >= 80 ? '잘했어요!' : score != null ? '계속 연습해 보세요' : '',
+    metrics: null,
+    questions: qs.length ? qs : null,
+    summary: { time: '-', count: '-', avg: '-' },
+  };
+}
+
+(function initQuickResultFromSession() {
+  const raw = sessionStorage.getItem('quickInterviewLastResult');
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      sessionStorage.removeItem('quickInterviewLastResult');
+      renderQuickResult(buildQuickResultFromApiPayload(parsed));
+      return;
+    } catch (_) {
+      sessionStorage.removeItem('quickInterviewLastResult');
+    }
+  }
+  renderQuickResult(quickResultData);
+})();

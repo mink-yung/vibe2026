@@ -56,4 +56,30 @@ function renderNormalResult(data) {
     </div>`).join('');
 }
 
-renderNormalResult(normalResultData);
+function buildNormalResultFromBasicApi(d) {
+  const score = d.overallScore != null ? Number(d.overallScore) : null;
+  return {
+    subtitle: d.summary ? String(d.summary) : '기본 면접 결과가 저장되었습니다.',
+    score: Number.isNaN(score) ? null : score,
+    tag: score != null && score >= 80 ? '잘했어요!' : score != null ? '계속 연습해 보세요' : '',
+    delivery: null,
+    content: null,
+    questions: [{ title: d.questionText || '질문', feedback: d.feedback || d.summary || '' }],
+    summary: { time: '-', count: '-', avg: '-' },
+  };
+}
+
+(function initNormalResultFromSession() {
+  const raw = sessionStorage.getItem('normalInterviewLastResult');
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      sessionStorage.removeItem('normalInterviewLastResult');
+      renderNormalResult(buildNormalResultFromBasicApi(parsed));
+      return;
+    } catch (_) {
+      sessionStorage.removeItem('normalInterviewLastResult');
+    }
+  }
+  renderNormalResult(normalResultData);
+})();

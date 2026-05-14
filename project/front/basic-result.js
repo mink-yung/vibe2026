@@ -145,4 +145,42 @@ function renderBasicResult(data) {
     </div>`).join('');
 }
 
-renderBasicResult(basicResultData);
+function truncateText(s, max) {
+  const t = String(s || '');
+  return t.length > max ? `${t.slice(0, max)}…` : t;
+}
+
+function buildBasicResultFromRealApi(d) {
+  const strengths = (d.feedbacks || []).map(f => ({
+    title: f.name || f.persona || '면접관',
+    desc: truncateText(f.feedback, 220),
+  }));
+  return {
+    subtitle: '실전 면접 결과가 저장되었습니다.',
+    radar1: null,
+    radar2: null,
+    feedback: {
+      summary: d.summary || '',
+      strengths: strengths.length ? strengths : null,
+      weaknesses: null,
+      recommends: null,
+    },
+    questions: [{ title: d.questionText || '질문', feedback: truncateText(d.summary, 500) }],
+    summary: { time: '-', count: '-', avg: '-' },
+  };
+}
+
+(function initBasicResultFromSession() {
+  const raw = sessionStorage.getItem('basicInterviewLastResult');
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      sessionStorage.removeItem('basicInterviewLastResult');
+      renderBasicResult(buildBasicResultFromRealApi(parsed));
+      return;
+    } catch (_) {
+      sessionStorage.removeItem('basicInterviewLastResult');
+    }
+  }
+  renderBasicResult(basicResultData);
+})();

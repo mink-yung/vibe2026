@@ -135,6 +135,10 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 /* 모달 */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
+#interviewExitWarnModal { z-index: 1200; }
+.modal-box-exit-warn { width: 440px; max-width: 95vw; }
+.interview-exit-warn-text { font-size: 14px; line-height: 1.65; color: #343a40; margin: 0 0 20px; }
+.interview-exit-warn-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; align-items: center; }
 .modal-box { background: #fff; border-radius: 16px; width: 680px; max-width: 95vw; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 8px 40px rgba(0,0,0,0.18); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px 14px; border-bottom: 1px solid #f1f3f5; flex-shrink: 0; }
 .modal-title { font-size: 15px; font-weight: 800; color: #212529; }

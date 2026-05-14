@@ -56,30 +56,52 @@ async function apiAuthFetch(path, options = {}) {
   return fetch(url, { ...rest, body, headers });
 }
 
+/**
+ * 면접 API(/api/interviews/*): 로그인 토큰 필수, 항상 Authorization: Bearer 전송
+ */
+async function apiInterviewFetch(path, options = {}) {
+  const token = getStoredAuthToken();
+  if (!token) {
+    return Promise.reject(new Error('LOGIN_REQUIRED'));
+  }
+  const url = path.startsWith('http') ? path : `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+  const { body: rawBody, headers: initHeaders, ...rest } = options;
+  const headers = new Headers(initHeaders || {});
+  headers.set('Authorization', `Bearer ${token}`);
+  let body = rawBody;
+  if (body != null && typeof body === 'object' && !(body instanceof FormData)) {
+    body = JSON.stringify(body);
+    if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  } else if (body != null && typeof body === 'string' && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  return fetch(url, { ...rest, body, headers });
+}
+
 async function apiGetAuthMe() {
   return apiAuthFetch('/api/auth/me', { method: 'GET' });
 }
 
 async function apiPostInterviewsQuick(body) {
-  return apiAuthFetch('/api/interviews/quick', { method: 'POST', body: body ?? {} });
+  return apiInterviewFetch('/api/interviews/quick', { method: 'POST', body: body ?? {} });
 }
 
 async function apiPostInterviewsBasic(body) {
-  return apiAuthFetch('/api/interviews/basic', { method: 'POST', body: body ?? {} });
+  return apiInterviewFetch('/api/interviews/basic', { method: 'POST', body: body ?? {} });
 }
 
 async function apiPostInterviewsReal(body) {
-  return apiAuthFetch('/api/interviews/real', { method: 'POST', body: body ?? {} });
+  return apiInterviewFetch('/api/interviews/real', { method: 'POST', body: body ?? {} });
 }
 
 async function apiGetInterviewsHistory() {
-  return apiAuthFetch('/api/interviews/history', { method: 'GET' });
+  return apiInterviewFetch('/api/interviews/history', { method: 'GET' });
 }
 
 async function apiGetInterviewsRecentAnalysis() {
-  return apiAuthFetch('/api/interviews/recent/analysis', { method: 'GET' });
+  return apiInterviewFetch('/api/interviews/recent/analysis', { method: 'GET' });
 }
 
 async function apiGetInterviewsRecentSummary() {
-  return apiAuthFetch('/api/interviews/recent/summary', { method: 'GET' });
+  return apiInterviewFetch('/api/interviews/recent/summary', { method: 'GET' });
 }

@@ -234,6 +234,51 @@ function closeLoginOutside(e) {
   if (e.target.id === 'loginModal') closeLoginModal();
 }
 
+const INTERVIEW_EXIT_SKIP_KEY = { basic: 'interviewExitWarnDontShow_basic', real: 'interviewExitWarnDontShow_real' };
+const INTERVIEW_EXIT_SECTION = { basic: 'normal', real: 'basic' };
+
+function openInterviewExitWarnModal(kind) {
+  if (kind !== 'basic' && kind !== 'real') return;
+  try {
+    if (localStorage.getItem(INTERVIEW_EXIT_SKIP_KEY[kind]) === '1') {
+      showSection(INTERVIEW_EXIT_SECTION[kind]);
+      return;
+    }
+  } catch (_) {}
+  window.__interviewExitPendingKind = kind;
+  const m = document.getElementById('interviewExitWarnModal');
+  if (m) {
+    m.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  } else {
+    showSection(INTERVIEW_EXIT_SECTION[kind]);
+    window.__interviewExitPendingKind = null;
+  }
+}
+
+function closeInterviewExitWarnModal() {
+  const m = document.getElementById('interviewExitWarnModal');
+  if (m) m.classList.remove('open');
+  document.body.style.overflow = '';
+  window.__interviewExitPendingKind = null;
+}
+
+function closeInterviewExitWarnOutside(e) {
+  if (e.target.id === 'interviewExitWarnModal') closeInterviewExitWarnModal();
+}
+
+function interviewExitWarnConfirmLeave(dontShowAgain) {
+  const kind = window.__interviewExitPendingKind;
+  closeInterviewExitWarnModal();
+  if (kind !== 'basic' && kind !== 'real') return;
+  if (dontShowAgain) {
+    try {
+      localStorage.setItem(INTERVIEW_EXIT_SKIP_KEY[kind], '1');
+    } catch (_) {}
+  }
+  showSection(INTERVIEW_EXIT_SECTION[kind]);
+}
+
 function getLoginErrorEl() {
   return document.getElementById('login-error');
 }
@@ -807,6 +852,144 @@ function drawModalLineChart(data) {
     svg.appendChild(t);
   });
 }
+
+async function finishBasicVideoInterviewSubmit() {
+  if (typeof getStoredAuthToken !== 'function' || !getStoredAuthToken()) {
+    alert('로그인이 필요합니다.');
+    location.href = 'dashboard.html#login';
+    return;
+  }
+  const labelEl = document.getElementById('vi-q-label');
+  const textEl = document.getElementById('vi-q-text');
+  const qLabel = (labelEl?.textContent || '').trim();
+  const qText = (textEl?.textContent || '').trim();
+  const questionText = [qLabel, qText].filter(Boolean).join(' ').trim() || '기본 면접';
+  const answerText = '기본 면접 화면에서 제출한 연습 답변(영상·STT는 추후 연동 예정)';
+  try {
+    const res = await apiPostInterviewsBasic({ questionText, answerText });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      if (typeof clearStoredAuth === 'function') clearStoredAuth();
+      location.href = 'dashboard.html#login';
+      return;
+    }
+    if (!res.ok) {
+      alert(data.message || '저장에 실패했습니다.');
+      return;
+    }
+    sessionStorage.setItem('normalInterviewLastResult', JSON.stringify(data));
+    location.href = 'normal-result.html';
+  } catch (e) {
+    if (e && e.message === 'LOGIN_REQUIRED') {
+      location.href = 'dashboard.html#login';
+      return;
+    }
+    console.error(e);
+    alert('서버와 통신할 수 없습니다.');
+  }
+}
+
+async function finishRealInterviewSubmit() {
+  if (typeof getStoredAuthToken !== 'function' || !getStoredAuthToken()) {
+    alert('로그인이 필요합니다.');
+    location.href = 'dashboard.html#login';
+    return;
+  }
+  const infoEl = document.getElementById('bi-q-info');
+  const questionText = (infoEl?.textContent || '').trim() || '실전 면접';
+  const answerText = '실전 면접 화면에서 제출한 연습 답변(영상·STT는 추후 연동 예정)';
+  try {
+    const res = await apiPostInterviewsReal({ questionText, answerText });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      if (typeof clearStoredAuth === 'function') clearStoredAuth();
+      location.href = 'dashboard.html#login';
+      return;
+    }
+    if (!res.ok) {
+      alert(data.message || '저장에 실패했습니다.');
+      return;
+    }
+    sessionStorage.setItem('basicInterviewLastResult', JSON.stringify(data));
+    location.href = 'basic-result.html';
+  } catch (e) {
+    if (e && e.message === 'LOGIN_REQUIRED') {
+      location.href = 'dashboard.html#login';
+      return;
+    }
+    console.error(e);
+    alert('서버와 통신할 수 없습니다.');
+  }
+}
+
+(function initDashboardInterviewApi() {
+  async function run() {
+    if (!document.getElementById('dashSection')) return;
+    if (typeof getStoredAuthToken !== 'function' || !getStoredAuthToken()) return;
+    try {
+      const [histRes, analRes] = await Promise.all([apiGetInterviewsHistory(), apiGetInterviewsRecentAnalysis()]);
+      if (histRes.status === 401 || analRes.status === 401) {
+        if (typeof clearStoredAuth === 'function') clearStoredAuth();
+        return;
+      }
+      const histJson = histRes.ok ? await histRes.json().catch(() => ({})) : {};
+      let analJson = null;
+      if (analRes.ok) analJson = await analRes.json().catch(() => null);
+
+      const hist = histJson.history;
+      const modeLabel = m => (m === 'quick' ? '빠른' : m === 'basic' ? '기본' : m === 'real' ? '실전' : m || '-');
+      const nextDash = { ...dashboardData };
+      if (Array.isArray(hist) && hist.length) {
+        nextDash.records = hist.slice(0, 4).map(h => {
+          const dt = h.createdAt ? new Date(h.createdAt) : null;
+          const dateStr =
+            dt && !Number.isNaN(dt.getTime())
+              ? `${dt.getMonth() + 1}.${String(dt.getDate()).padStart(2, '0')}`
+              : '-';
+          return {
+            label: modeLabel(h.mode),
+            score: h.overallScore != null ? `${h.overallScore}점` : '-',
+            date: dateStr,
+          };
+        });
+      }
+      const overall = analJson?.analysis?.overallScore;
+      if (overall != null) {
+        nextDash.attitude = { ...dashboardData.attitude, score: overall };
+        nextDash.competency = { ...dashboardData.competency, score: overall };
+      }
+      renderDashboard(nextDash);
+
+      const a = analJson?.analysis;
+      if (a) {
+        const fs = document.getElementById('feedback-strength');
+        if (fs && a.strengths?.[0]) fs.textContent = a.strengths[0];
+        const fw = document.getElementById('feedback-weakness');
+        if (fw && a.weaknesses?.[0]) fw.textContent = a.weaknesses[0];
+        const fr = document.getElementById('feedback-recommend');
+        if (fr && a.recommendation) fr.textContent = a.recommendation;
+      }
+
+      try {
+        const sumRes = await apiGetInterviewsRecentSummary();
+        if (sumRes.status === 401) {
+          if (typeof clearStoredAuth === 'function') clearStoredAuth();
+        } else if (sumRes.ok) {
+          const sj = await sumRes.json().catch(() => ({}));
+          const rec = document.getElementById('feedback-recommend');
+          if (rec && sj.summary && !(a && a.recommendation)) rec.textContent = sj.summary;
+        }
+      } catch (_) {}
+    } catch (e) {
+      if (e && e.message === 'LOGIN_REQUIRED') return;
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
+})();
 
 (function initAuthTopbarOnLoad() {
   function run() {
