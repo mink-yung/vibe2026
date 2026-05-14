@@ -9,7 +9,15 @@
 | 면접기록 조회      | `GET /api/interviews/history`         | 내가 했던 면접 목록 조회  |
 | 면접 분석 조회  | `GET /api/interviews/recent/analysis` | 최근 면접 분석 결과 조회  |
 | AI 피드백 요약 조회 | `GET /api/interviews/recent/summary`  | 최근 피드백 요약 조회    |
-| 내 정보 조회 | `GET /api/auth/me` | 로그인한 사용자 정보 불러오기 |
+| 내 정보 조회 | `GET /api/auth/me` | 이름·이메일·가입일(계정정보) |
+| 상세정보 조회 | `GET /api/auth/profile` | 나이·출신대학·취미·특기 |
+| 상세정보 저장 | `PATCH /api/auth/profile` | 나이·출신대학·취미·특기 저장 (DB 컬럼 필요) |
+| 면접 상세 조회   | `GET /api/interviews/:interviewId`    | O      |
+| 면접 기록 삭제   | `DELETE /api/interviews/:interviewId` | O      |
+| 빠른면접 음성 저장 | `POST /api/interviews/quick/audio`    | O      |
+| 기본면접 음성 저장 | `POST /api/interviews/basic/audio`    | O      |
+
+| 회원탈퇴 | `DELETE /api/auth/account` | 면접 기록 삭제 후 계정 삭제 |
 
 /api/interviews/quick
 /api/interviews/basic

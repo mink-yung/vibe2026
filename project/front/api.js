@@ -82,6 +82,21 @@ async function apiGetAuthMe() {
   return apiAuthFetch('/api/auth/me', { method: 'GET' });
 }
 
+/** 상세정보(나이·출신대학·취미·특기) 조회 — 마이페이지 상세 탭 전용 */
+async function apiGetAuthProfile() {
+  return apiAuthFetch('/api/auth/profile', { method: 'GET' });
+}
+
+/** 상세정보(나이·출신대학·취미·특기) 저장 */
+async function apiPatchAuthProfile(body) {
+  return apiAuthFetch('/api/auth/profile', { method: 'PATCH', body: body ?? {} });
+}
+
+/** 회원탈퇴 — 연관 면접 기록 삭제 후 계정 삭제 */
+async function apiDeleteAuthAccount() {
+  return apiAuthFetch('/api/auth/account', { method: 'DELETE' });
+}
+
 async function apiPostInterviewsQuick(body) {
   return apiInterviewFetch('/api/interviews/quick', { method: 'POST', body: body ?? {} });
 }

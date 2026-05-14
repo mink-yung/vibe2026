@@ -6,13 +6,156 @@
   <title>마이페이지 · AI 면접 준비 플랫폼</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="dashboard.css" />
-  <link rel="stylesheet" href="interview-record.css" />
-  <link rel="stylesheet" href="quick-interview.css" />
-  <link rel="stylesheet" href="video-interview.css" />
-  <link rel="stylesheet" href="basic-interview.css" />
-  <link rel="stylesheet" href="quick-result.css" />
-  <link rel="stylesheet" href="normal-result.css" />
-  <link rel="stylesheet" href="basic-result.css" />
+  <style>
+    .mp-layout { display: flex; gap: 24px; align-items: flex-start; max-width: 880px; margin: 0 auto; flex-wrap: wrap; }
+    .mp-aside {
+      flex: 0 0 200px;
+      background: #fff;
+      border: 1px solid #e9ecef;
+      border-radius: 12px;
+      padding: 12px 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .mp-aside-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #868e96;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      padding: 8px 16px 12px;
+      border-bottom: 1px solid #f1f3f5;
+      margin-bottom: 4px;
+    }
+    .mp-nav-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #495057;
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+    .mp-nav-btn:hover { background: #f8f9fa; color: #212529; }
+    .mp-nav-btn.active {
+      background: #e7f5ff;
+      color: #1864ab;
+      border-left-color: #339af0;
+    }
+    .mp-main {
+      flex: 1;
+      min-width: 280px;
+      background: #fff;
+      border: 1px solid #e9ecef;
+      border-radius: 12px;
+      padding: 24px 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .mp-panel-title { font-size: 20px; font-weight: 800; color: #212529; margin: 0 0 8px; }
+    .mp-panel-desc { font-size: 14px; color: #868e96; margin: 0 0 20px; line-height: 1.5; }
+    .mp-field { margin-bottom: 16px; }
+    .mp-msg { font-size: 13px; margin-top: 12px; padding: 10px 12px; border-radius: 8px; }
+    .mp-msg-muted { background: #f8f9fa; color: #495057; }
+    .mp-msg-ok { background: #ebfbee; color: #2b8a3e; }
+    .mp-msg-error { background: #fff5f5; color: #c92a2a; }
+    .mp-withdraw-zone {
+      border: 1px solid #ffc9c9;
+      border-radius: 10px;
+      padding: 20px;
+      background: #fff5f5;
+    }
+    .mp-withdraw-zone p { margin: 0 0 14px; font-size: 14px; color: #862e2e; line-height: 1.55; }
+    .btn-danger-outline {
+      display: inline-block;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #c92a2a;
+      background: #fff;
+      border: 1px solid #fa5252;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-danger-outline:hover { background: #fff0f0; }
+    .mp-detail-summary-wrap { margin-top: 4px; }
+    .mp-detail-summary-wrap dl { margin: 0; }
+    .mp-detail-summary-wrap dt { margin-top: 14px; font-size: 12px; font-weight: 700; color: #868e96; }
+    .mp-detail-summary-wrap dt:first-child { margin-top: 0; }
+    .mp-detail-summary-wrap dd { margin: 4px 0 0; font-size: 15px; color: #212529; white-space: pre-wrap; word-break: break-word; }
+    .mp-textarea { min-height: 72px; width: 100%; resize: vertical; font-family: inherit; line-height: 1.5; }
+    .mp-detail-actions { display: flex; gap: 10px; align-items: center; margin-top: 20px; flex-wrap: wrap; }
+    .mp-detail-actions-col {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+      width: 100%;
+      max-width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+      align-items: stretch;
+    }
+    .mp-detail-actions-col .btn-primary.auth-submit,
+    .mp-detail-actions-col .mp-btn-cancel-edit {
+      width: 100%;
+      margin-top: 0 !important;
+      box-sizing: border-box;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1.3;
+    }
+    .mp-detail-actions-col .mp-btn-cancel-edit {
+      background: #fa5252;
+      color: #fff;
+      border: none;
+    }
+    .mp-detail-actions-col .mp-btn-cancel-edit:hover { background: #e03131; }
+    .mp-detail-actions-col .btn-primary.auth-submit { border: none; }
+    .mp-modal-full-btn {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1.3;
+      border: none;
+    }
+    .mp-modal-btn-keep {
+      background: #fff;
+      color: #495057;
+      border: 1px solid #dee2e6;
+    }
+    .mp-modal-btn-keep:hover { background: #f8f9fa; }
+    .mp-discard-confirm {
+      background: #fa5252;
+      color: #fff;
+      border: none;
+    }
+    .mp-discard-msg {
+      font-size: 14px;
+      color: #495057;
+      line-height: 1.65;
+      margin: 0 0 20px;
+      text-align: center;
+    }
+    .mp-discard-modal-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      align-items: stretch;
+    }
+    .mp-btn-secondary { padding: 10px 18px; border-radius: 8px; border: 1px solid #dee2e6; background: #fff; color: #495057; font-weight: 600; cursor: pointer; }
+    .mp-btn-secondary:hover { background: #f8f9fa; }
+  </style>
 </head>
 <body>
 
@@ -28,7 +171,7 @@
     <span style="letter-spacing:0.04em;">INTERVIEW AI</span>
   </div>
   <nav>
-    <button type="button" class="nav-item active" onclick="location.href='dashboard.html'">
+    <button type="button" class="nav-item" onclick="location.href='dashboard.html'">
       <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span> 홈
     </button>
     <button type="button" class="nav-item" onclick="location.href='mock-interview.html'">
@@ -43,6 +186,9 @@
     <button type="button" class="nav-item" onclick="location.href='interview-record.html'">
       <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span> 면접기록
     </button>
+    <button type="button" class="nav-item active" onclick="location.href='mypage.html'">
+      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> 마이페이지
+    </button>
   </nav>
   <div class="theme-btns">
     <button class="theme-btn on">☀️</button>
@@ -52,12 +198,105 @@
 
 <div class="main">
   <div class="topbar" id="authTopbar"></div>
-  <div class="content" style="max-width:520px;margin:0 auto;">
-    <div class="auth-card" style="max-width:none;margin:0;">
-      <h1 class="auth-card-title" style="margin-top:0">마이페이지</h1>
-      <p class="auth-card-desc">로그인한 계정 정보입니다.</p>
-      <div id="mp-profile"></div>
-      <p class="auth-switch" style="margin-top:20px;"><a href="dashboard.html">홈으로</a></p>
+  <div class="content" style="padding-top:8px;">
+    <div class="mp-layout">
+      <aside class="mp-aside">
+        <div class="mp-aside-title">메뉴</div>
+        <button type="button" class="mp-nav-btn active" data-mp="account">계정정보</button>
+        <button type="button" class="mp-nav-btn" data-mp="detail">상세정보</button>
+        <button type="button" class="mp-nav-btn" data-mp="withdraw">회원탈퇴</button>
+      </aside>
+
+      <div class="mp-main">
+        <!-- 계정정보: 회원가입 시 수집한 정보 -->
+        <section id="mp-panel-account" class="mp-panel">
+          <h1 class="mp-panel-title">계정정보</h1>
+          <p class="mp-panel-desc">회원가입 시 등록한 정보입니다.</p>
+          <div id="mp-account-msg" class="mp-msg mp-msg-error" hidden role="alert"></div>
+          <div class="auth-label">이름</div>
+          <div id="mp-acc-name" style="font-size:15px;color:#212529;margin-bottom:14px;font-weight:600;">-</div>
+          <div class="auth-label">이메일</div>
+          <div id="mp-acc-email" style="font-size:15px;color:#212529;margin-bottom:14px;">-</div>
+          <div class="auth-label">가입일</div>
+          <div id="mp-acc-joined" style="font-size:15px;color:#212529;">-</div>
+        </section>
+
+        <section id="mp-panel-detail" class="mp-panel" hidden>
+          <h1 class="mp-panel-title">상세정보</h1>
+          <div id="mp-detail-msg" class="mp-msg mp-msg-muted" hidden role="status"></div>
+          <div id="mp-detail-summary" class="mp-detail-summary-wrap"></div>
+          <form id="mp-detail-form" class="auth-form mp-detail-form" style="padding:0;" hidden>
+            <div class="mp-field"><label class="auth-label" for="mp-p-age">나이</label><input type="number" id="mp-p-age" class="auth-input" min="1" max="120" placeholder="예: 25" /></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-university">출신대학</label><input type="text" id="mp-p-university" class="auth-input" maxlength="200" placeholder="대학교 이름" /></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-major">전공</label><input type="text" id="mp-p-major" class="auth-input" maxlength="200" placeholder="전공" /></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-hobby">취미</label><input type="text" id="mp-p-hobby" class="auth-input" maxlength="500" placeholder="취미" /></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-specialty">특기</label><input type="text" id="mp-p-specialty" class="auth-input" maxlength="500" placeholder="특기" /></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-desired_position">희망 직무</label><input type="text" id="mp-p-desired_position" class="auth-input" maxlength="200" placeholder="예: 프론트엔드 개발" /></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-career_level">경력 수준</label><input type="text" id="mp-p-career_level" class="auth-input" maxlength="100" placeholder="예: 신입, 3년차" /></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-skills">기술/역량</label><textarea id="mp-p-skills" class="auth-input mp-textarea" rows="4" placeholder="사용 기술, 역량 등"></textarea></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-certifications">자격증</label><textarea id="mp-p-certifications" class="auth-input mp-textarea" rows="3" placeholder="취득 자격증"></textarea></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-projects">프로젝트 경험</label><textarea id="mp-p-projects" class="auth-input mp-textarea" rows="4" placeholder="프로젝트 설명"></textarea></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-experience">경력/활동 경험</label><textarea id="mp-p-experience" class="auth-input mp-textarea" rows="4" placeholder="경력, 인턴, 동아리 등"></textarea></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-resume_text">이력서 내용</label><textarea id="mp-p-resume_text" class="auth-input mp-textarea" rows="8" placeholder="요약 이력서 본문"></textarea></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-portfolio_url">포트폴리오 링크</label><input type="url" id="mp-p-portfolio_url" class="auth-input" maxlength="500" placeholder="https://..." /></div>
+            <div class="mp-field"><label class="auth-label" for="mp-p-github_url">깃허브 링크</label><input type="url" id="mp-p-github_url" class="auth-input" maxlength="500" placeholder="https://github.com/..." /></div>
+          </form>
+          <div id="mp-detail-edit-actions" class="mp-detail-actions-col" hidden>
+            <button type="button" class="mp-btn-cancel-edit" onclick="mpCancelDetailEdit()">취소</button>
+            <button type="button" class="btn-primary auth-submit" onclick="mpSaveDetail()">저장</button>
+          </div>
+          <div id="mp-detail-view-actions" class="mp-detail-actions-col">
+            <button type="button" class="btn-primary auth-submit" onclick="mpEnterDetailEdit()">수정하기</button>
+          </div>
+          <div id="mp-detail-status" class="mp-msg mp-msg-muted" hidden></div>
+        </section>
+
+        <section id="mp-panel-withdraw" class="mp-panel" hidden>
+          <h1 class="mp-panel-title">회원탈퇴</h1>
+          <p class="mp-panel-desc">탈퇴 시 계정과 면접 기록이 삭제되며 복구할 수 없습니다.</p>
+          <div class="mp-withdraw-zone">
+            <p>탈퇴를 진행하면 서버에서 회원 정보와 연결된 면접 데이터가 함께 삭제됩니다. 정말 진행하시려면 아래 버튼을 눌러 확인 단계로 이동하세요.</p>
+            <button type="button" class="btn-danger-outline" onclick="mpOpenWithdrawModal()">회원탈퇴 진행</button>
+          </div>
+        </section>
+
+        <p class="auth-switch" style="margin-top:28px;margin-bottom:0;"><a href="dashboard.html">홈으로</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 상세정보 편집 취소 확인 -->
+<div class="modal-overlay" id="mpDiscardEditModal" onclick="mpDiscardEditOutside(event)">
+  <div class="modal-box modal-box-auth" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">작성 취소</span>
+      <button type="button" class="modal-close-btn" onclick="mpCloseDiscardEditModal()" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="mp-discard-msg">작성 중인 내용이 저장되지 않습니다.<br />괜찮으신가요?</p>
+      <div class="mp-discard-modal-btns">
+        <button type="button" class="mp-modal-full-btn mp-modal-btn-keep" onclick="mpCloseDiscardEditModal()">취소</button>
+        <button type="button" class="mp-modal-full-btn mp-discard-confirm" onclick="mpConfirmDiscardEdit()">입력취소</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 탈퇴 확인 모달 -->
+<div class="modal-overlay" id="mpWithdrawModal" onclick="mpWithdrawOutside(event)">
+  <div class="modal-box modal-box-auth" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">회원탈퇴 확인</span>
+      <button type="button" class="modal-close-btn" onclick="mpCloseWithdrawModal()" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:#495057;line-height:1.6;margin:0 0 16px;">정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
+      <div id="mp-withdraw-error" class="auth-alert auth-alert-error" role="alert" hidden style="margin-bottom:12px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" onclick="mpCloseWithdrawModal()" style="padding:10px 16px;border-radius:8px;border:1px solid #dee2e6;background:#fff;cursor:pointer;font-weight:600;color:#495057;">취소</button>
+        <button type="button" class="btn-danger-outline" onclick="mpConfirmWithdraw()">탈퇴하기</button>
+      </div>
     </div>
   </div>
 </div>
@@ -84,45 +323,6 @@
 
 <script src="api.js"></script>
 <script src="dashboard.js"></script>
-<script>
-  async function fillMypageProfile() {
-    var mount = document.getElementById('mp-profile');
-    if (!mount) return;
-    if (!getStoredAuthToken()) {
-      location.href = 'dashboard.html#login';
-      return;
-    }
-    var local = getStoredAuthUser();
-    if (local) {
-      mount.innerHTML =
-        '<div class="auth-label">이름</div><div style="font-size:15px;color:#212529;margin-bottom:12px;">' +
-        escapeHtml(local.name || '-') +
-        '</div><div class="auth-label">이메일</div><div style="font-size:15px;color:#212529;">' +
-        escapeHtml(local.email || '-') +
-        '</div>';
-    } else {
-      mount.innerHTML = '<p style="color:#868e96;font-size:14px;">저장된 프로필이 없습니다.</p>';
-    }
-    try {
-      var res = await apiGetAuthMe();
-      var data = await res.json().catch(function () { return {}; });
-      if (!res.ok) return;
-      var u = data.user;
-      if (u && mount) {
-        mount.innerHTML =
-          '<div class="auth-label">이름</div><div style="font-size:15px;color:#212529;margin-bottom:12px;">' +
-          escapeHtml(u.name || '-') +
-          '</div><div class="auth-label">이메일</div><div style="font-size:15px;color:#212529;">' +
-          escapeHtml(u.email || '-') +
-          '</div>';
-        saveAuthToStorage(getStoredAuthToken(), { id: u.id, email: u.email, name: u.name });
-        renderAuthTopbar();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
-  document.addEventListener('DOMContentLoaded', fillMypageProfile);
-</script>
+<script src="mypage.js"></script>
 </body>
 </html>

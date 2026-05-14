@@ -1,6 +1,7 @@
 import express from "express";
 import { pool } from "../config/db.js";
 import { authRequired } from "../middleware/authMiddleware.js";
+import { generateInterviewFeedback } from "../services/aiService.js";
 
 const router = express.Router();
 
@@ -63,9 +64,19 @@ router.post("/quick", async (req, res) => {
       });
     }
 
-    const feedbackData = mockFeedbacks.friendly;
-    const summary = "빠른면접 답변은 경험을 언급한 점은 좋지만, 구체적인 역할과 결과 설명이 더 필요합니다.";
-    const overallScore = 75;
+    const aiResult = await generateInterviewFeedback({
+      persona: "friendly",
+      questionText: null,
+      answerText
+    });
+    
+    const feedbackData = {
+      feedback: aiResult.feedback,
+      nextQuestion: aiResult.nextQuestion
+    };
+    
+    const summary = aiResult.summary;
+    const overallScore = aiResult.overallScore;
 
     const [interviewResult] = await pool.execute(
       `INSERT INTO interviews 
@@ -118,9 +129,19 @@ router.post("/basic", async (req, res) => {
       });
     }
 
-    const feedbackData = mockFeedbacks.friendly;
-    const summary = "기본면접 답변은 질문에 맞게 답변했지만, 사례와 성과를 더 구체적으로 말하면 좋습니다.";
-    const overallScore = 78;
+    const aiResult = await generateInterviewFeedback({
+      persona: "friendly",
+      questionText,
+      answerText
+    });
+    
+    const feedbackData = {
+      feedback: aiResult.feedback,
+      nextQuestion: aiResult.nextQuestion
+    };
+    
+    const summary = aiResult.summary;
+    const overallScore = aiResult.overallScore;
 
     const [interviewResult] = await pool.execute(
       `INSERT INTO interviews 
@@ -174,8 +195,49 @@ router.post("/real", async (req, res) => {
       });
     }
 
-    const summary = "실전면접 답변은 직무 경험을 언급한 점은 좋지만, 구체적인 성과와 문제 해결 과정이 부족합니다.";
-    const overallScore = 80;
+    const friendlyResult = await generateInterviewFeedback({
+      persona: "friendly",
+      questionText,
+      answerText
+    });
+    
+    const sharpResult = await generateInterviewFeedback({
+      persona: "sharp",
+      questionText,
+      answerText
+    });
+    
+    const pressureResult = await generateInterviewFeedback({
+      persona: "pressure",
+      questionText,
+      answerText
+    });
+    
+    const summary = friendlyResult.summary;
+    const overallScore = Math.round(
+      (friendlyResult.overallScore + sharpResult.overallScore + pressureResult.overallScore) / 3
+    );
+    
+    const feedbacks = [
+      {
+        persona: "friendly",
+        name: "친절한 면접관",
+        feedback: friendlyResult.feedback,
+        nextQuestion: friendlyResult.nextQuestion
+      },
+      {
+        persona: "sharp",
+        name: "까칠한 면접관",
+        feedback: sharpResult.feedback,
+        nextQuestion: sharpResult.nextQuestion
+      },
+      {
+        persona: "pressure",
+        name: "압박 면접관",
+        feedback: pressureResult.feedback,
+        nextQuestion: pressureResult.nextQuestion
+      }
+    ];
 
     const [interviewResult] = await pool.execute(
       `INSERT INTO interviews 
@@ -185,27 +247,6 @@ router.post("/real", async (req, res) => {
     );
 
     const interviewId = interviewResult.insertId;
-
-    const feedbacks = [
-      {
-        persona: "friendly",
-        name: "친절한 면접관",
-        feedback: mockFeedbacks.friendly.feedback,
-        nextQuestion: mockFeedbacks.friendly.nextQuestion
-      },
-      {
-        persona: "sharp",
-        name: "까칠한 면접관",
-        feedback: mockFeedbacks.sharp.feedback,
-        nextQuestion: mockFeedbacks.sharp.nextQuestion
-      },
-      {
-        persona: "pressure",
-        name: "압박 면접관",
-        feedback: mockFeedbacks.pressure.feedback,
-        nextQuestion: mockFeedbacks.pressure.nextQuestion
-      }
-    ];
 
     for (const item of feedbacks) {
       await pool.execute(
@@ -266,7 +307,8 @@ router.get("/history", async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "서버 오류가 발생했습니다."
+      message: "서버 오류가 발생했습니다.",
+      error: error.message
     });
   }
 });
