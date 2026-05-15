@@ -1,76 +1,139 @@
 var replayIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
 
-// API에서 받아온 데이터를 여기에 채우면 됩니다
 const quickResultData = {
-  subtitle: null,       // 예: '총 4분 58초에 면접을 완료했습니다.'
-  score: null,          // 예: 86
-  tag: null,            // 예: '잘했어요!'
-  metrics: null,        // 예: [{ icon:'⏱', color:'yellow', name:'말하기속도', score:79, desc:'...' }, ...]
-  questions: null,      // 예: [{ title:'자기소개를 해주세요.', feedback:'...' }, ...]
-  summary: {
-    time: null,         // 예: '04:58'
-    count: null,        // 예: '3개'
-    avg: null,          // 예: '01:39'
-  },
+  subtitle: null,
+  score: null,
+  tag: null,
+  tagClass: '',
+  metrics: null,
+  questions: null,
+  summary: { time: null, count: null, avg: null },
 };
 
-function renderQuickResult(data) {
-  const { subtitle, score, tag, metrics, questions, summary } = data;
+function metricItemHtml(m) {
+  return (
+    '<div class="metric-item">' +
+    '<div class="metric-icon-wrap ' +
+    m.color +
+    '">' +
+    m.icon +
+    '</div>' +
+    '<div class="metric-name">' +
+    m.name +
+    '</div>' +
+    '<div class="metric-score ' +
+    (m.scoreClass || '') +
+    '">' +
+    m.score +
+    '<span>/100</span></div>' +
+    '<div class="metric-desc">' +
+    (m.desc || '') +
+    '</div></div>'
+  );
+}
 
-  document.getElementById('qs-subtitle').textContent = subtitle ?? '면접을 완료했습니다.';
+function renderQuickResult(data) {
+  const { subtitle, score, tag, tagClass, metrics, questions, summary } = data;
+
+  document.getElementById('qs-subtitle').textContent = subtitle ?? '\uba74\uc811\uc744 \uc644\ub8cc\ud588\uc2b5\ub2c8\ub2e4.';
   document.getElementById('qs-score').textContent = score ?? '-';
-  document.getElementById('qs-tag').textContent = tag ?? '';
-  if (score != null) {
+  const tagEl = document.getElementById('qs-tag');
+  tagEl.textContent = tag ?? '';
+  tagEl.className = 'score-circle-tag' + (tagClass ? ' ' + tagClass : '');
+
+  const circle = document.getElementById('qs-score-circle');
+  if (score != null && circle) {
     const c = 427;
-    document.getElementById('qs-score-circle').setAttribute('stroke-dasharray', `${(c * score / 100).toFixed(1)} ${(c * (1 - score / 100)).toFixed(1)}`);
+    circle.setAttribute(
+      'stroke-dasharray',
+      (c * score) / 100 + ' ' + (c * (1 - score / 100))
+    );
+    circle.setAttribute(
+      'stroke',
+      typeof getScoreStrokeColor === 'function' ? getScoreStrokeColor(score) : '#2f9e44'
+    );
   }
+
   document.getElementById('qs-time').textContent = summary?.time ?? '-';
   document.getElementById('qs-count').textContent = summary?.count ?? '-';
   document.getElementById('qs-avg').textContent = summary?.avg ?? '-';
 
   if (metrics) {
-    document.getElementById('qs-metrics').innerHTML = metrics.map(m => `
-      <div class="metric-item">
-        <div class="metric-icon-wrap ${m.color}">${m.icon}</div>
-        <div class="metric-name">${m.name}</div>
-        <div class="metric-score">${m.score}<span>/100</span></div>
-        <div class="metric-desc">${m.desc}</div>
-      </div>`).join('');
+    document.getElementById('qs-metrics').innerHTML = metrics.map(metricItemHtml).join('');
   }
 
   if (!questions) return;
-  document.getElementById('qs-questions').innerHTML = questions.map((q, i) => `
-    <div class="record-q-item">
-      <div class="record-q-num">${i + 1}</div>
-      <div class="record-q-content">
-        <div class="record-q-title">${q.title}</div>
-        <div class="record-q-feedback">${q.feedback}</div>
-      </div>
-      <button class="replay-btn">${replayIcon} 답변 다시 듣기</button>
-    </div>`).join('');
+  document.getElementById('qs-questions').innerHTML = questions
+    .map(function (q, i) {
+      return (
+        '<div class="record-q-item">' +
+        '<div class="record-q-num">' +
+        (i + 1) +
+        '</div>' +
+        '<div class="record-q-content">' +
+        '<div class="record-q-title">' +
+        q.title +
+        '</div>' +
+        '<div class="record-q-feedback">' +
+        q.feedback +
+        '</div></div>' +
+        '<button type="button" class="replay-btn">' +
+        replayIcon +
+        ' \ub2f5\ubcc0 \ub2e4\uc2dc \ub4e3\uae30</button></div>'
+      );
+    })
+    .join('');
 }
 
 function buildQuickResultFromApiPayload(p) {
-  const score = p.overallScore != null ? Number(p.overallScore) : null;
-  const fb = p.feedback ? String(p.feedback) : '';
+  const apiOverall = p.overallScore != null ? Number(p.overallScore) : null;
+  const answerText = p.answerText || p.transcript || '';
+  const built =
+    typeof buildMetricDisplayList === 'function'
+      ? buildMetricDisplayList(QUICK_METRIC_DEFS, apiOverall ?? 72, {
+          answerText: answerText,
+          seed: String(p.interviewId || 'quick'),
+        })
+      : { items: [], average: apiOverall };
+
+  const score = built.average != null ? built.average : apiOverall;
+  const tag = score != null ? getScoreMent(score) : '';
+  const tagClass = score != null ? getTagClass(score) : '';
+
   const qs = [];
-  if (fb) qs.push({ title: 'AI 피드백', feedback: fb });
-  if (p.summary) qs.push({ title: '요약', feedback: String(p.summary) });
-  if (p.nextQuestion) qs.push({ title: '다음 질문 제안', feedback: String(p.nextQuestion) });
+  if (Array.isArray(p.questionRecords) && p.questionRecords.length) {
+    p.questionRecords.forEach(function (r, i) {
+      qs.push({
+        title: r.question || '\uc9c8\ubb38 ' + (i + 1),
+        feedback: r.answer || r.feedback || '',
+      });
+    });
+  } else {
+    if (p.feedback) qs.push({ title: 'AI \ud53c\ub4dc\ubc31', feedback: String(p.feedback) });
+    if (p.summary) qs.push({ title: '\uc694\uc57d', feedback: String(p.summary) });
+  }
 
   const isAudio = p.mode === 'quick_audio';
-  let subtitle = isAudio ? '음성 빠른면접 결과가 저장되었습니다.' : '빠른면접 결과가 저장되었습니다.';
-  if (p.interviewId != null) {
-    subtitle += ' (기록 #' + p.interviewId + ')';
+  let subtitle = isAudio
+    ? '\uc74c\uc131 \ube60\ub978\uba74\uc811\uc744 \uc644\ub8cc\ud588\uc2b5\ub2c8\ub2e4.'
+    : '\ube60\ub978\uba74\uc811\uc744 \uc644\ub8cc\ud588\uc2b5\ub2c8\ub2e4.';
+  if (p.elapsedMs && typeof formatDurationMs === 'function') {
+    subtitle =
+      '\ucd1d ' + formatDurationMs(p.elapsedMs) + '\uc5d0 \uba74\uc811\uc744 \uc644\ub8cc\ud588\uc2b5\ub2c8\ub2e4.';
   }
 
   return {
-    subtitle,
-    score,
-    tag: score != null && score >= 80 ? '잘했어요!' : score != null ? '계속 연습해 보세요' : '',
-    metrics: null,
+    subtitle: subtitle,
+    score: score,
+    tag: tag,
+    tagClass: tagClass,
+    metrics: built.items,
     questions: qs.length ? qs : null,
-    summary: { time: '-', count: isAudio ? '3개' : '-', avg: '-' },
+    summary: formatSummaryFromSession({
+      elapsedMs: p.elapsedMs,
+      questionCount: p.questionCount || (isAudio ? 3 : null),
+      questions: p.questionRecords,
+    }),
   };
 }
 

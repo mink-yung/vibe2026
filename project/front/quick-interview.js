@@ -338,6 +338,10 @@ function buildCombinedPayload() {
 }
 
 function saveQuickResultAndGo(data) {
+  const elapsedMs = interviewStartedAt ? Date.now() - interviewStartedAt : null;
+  const questionRecords = quickQuestions.map(function (q, i) {
+    return { question: q, answer: state.transcripts[i] || '' };
+  });
   sessionStorage.setItem(
     'quickInterviewLastResult',
     JSON.stringify({
@@ -349,6 +353,9 @@ function saveQuickResultAndGo(data) {
       nextQuestion: data.nextQuestion,
       questionText: data.questionText,
       answerText: data.answerText || data.transcript,
+      elapsedMs: elapsedMs,
+      questionCount: QUICK_QUESTION_COUNT,
+      questionRecords: questionRecords,
     })
   );
   location.href = 'quick-result.html';

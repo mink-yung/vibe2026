@@ -52,7 +52,7 @@
 
 <div class="main">
   <div class="topbar" id="authTopbar"></div>
-  <div id="basicInterviewSection" style="display:block; position:fixed; inset:0; z-index:500;">
+  <div id="basicInterviewSection" class="bi-theme-light" style="display:block; position:fixed; inset:0; z-index:500;">
     <div class="bi-wrap">
 
       <div class="bi-topbar">
@@ -60,13 +60,15 @@
           <span class="bi-badge">실전 면접</span>
         </div>
         <div class="bi-topbar-center">
-          <span class="bi-q-info" id="bi-q-info">-</span>
+          <span class="bi-topbar-stat-label">질문</span>
+          <span class="bi-q-progress" id="bi-q-progress">1 / 12</span>
           <span class="bi-divider">|</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span class="bi-timer" id="bi-timer">-</span>
+          <span class="bi-topbar-stat-label">진행 시간</span>
+          <span class="bi-timer" id="bi-timer">00:00</span>
+          <span id="bi-q-info" class="bi-q-info-sr" hidden aria-hidden="true"></span>
         </div>
         <div class="bi-topbar-right">
-          <button type="button" class="bi-end-btn" onclick="finishRealInterviewSubmit()">
+          <button type="button" class="bi-end-btn" id="bi-exit-interview">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             면접 종료
           </button>
@@ -76,27 +78,32 @@
       <div class="bi-videos">
         <div class="bi-video-main">
           <div class="bi-video-label">나 (지원자)</div>
+          <span class="bi-rec-badge" id="bi-rec-badge" hidden>● 녹화 중</span>
           <div class="bi-video-bg user-bg">
+            <video id="bi-user-video" class="cam-user-video" autoplay playsinline muted hidden></video>
             <div class="bi-avatar">
               <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
           </div>
         </div>
         <div class="bi-video-side">
-          <div class="bi-video-small">
+          <div class="bi-video-small bi-interviewer-panel" data-interviewer="1">
             <div class="bi-video-label">AI 면접관 1</div>
+            <p class="bi-panel-question" id="bi-q-caption-1" hidden></p>
             <div class="bi-video-bg interviewer-bg">
               <div class="bi-avatar"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
             </div>
           </div>
-          <div class="bi-video-small">
+          <div class="bi-video-small bi-interviewer-panel" data-interviewer="2">
             <div class="bi-video-label">AI 면접관 2</div>
+            <p class="bi-panel-question" id="bi-q-caption-2" hidden></p>
             <div class="bi-video-bg interviewer-bg">
               <div class="bi-avatar"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
             </div>
           </div>
-          <div class="bi-video-small">
+          <div class="bi-video-small bi-interviewer-panel" data-interviewer="3">
             <div class="bi-video-label">AI 면접관 3</div>
+            <p class="bi-panel-question" id="bi-q-caption-3" hidden></p>
             <div class="bi-video-bg interviewer-bg">
               <div class="bi-avatar"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
             </div>
@@ -104,14 +111,18 @@
         </div>
       </div>
 
+      <p class="bi-cam-error" id="bi-cam-error" hidden></p>
+
       <div class="bi-controls">
         <div class="bi-controls-left"></div>
         <div class="bi-controls-center">
-          <button class="bi-ctrl-btn" title="마이크">
+          <button type="button" class="bi-ctrl-btn cam-start-btn" id="bi-cam-start">면접 시작</button>
+          <button type="button" class="bi-ctrl-btn cam-end-answer-btn" id="bi-cam-end-answer" hidden>답변 종료</button>
+          <button class="bi-ctrl-btn" title="마이크" type="button" disabled>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
             <span>마이크</span>
           </button>
-          <button class="bi-ctrl-btn" title="카메라">
+          <button type="button" class="bi-ctrl-btn" title="카메라">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
             <span>카메라</span>
           </button>
@@ -123,6 +134,15 @@
         <div class="bi-controls-right"></div>
       </div>
 
+    </div>
+
+    <div id="bi-analyzing-overlay" class="cam-analyzing-overlay" hidden>
+      <div class="cam-analyzing-inner">
+        <div class="cam-spinner" aria-hidden="true"></div>
+        <p id="bi-analyzing-text">3명의 AI 면접관이 답변을 분석 중입니다...</p>
+        <p id="bi-analyzing-error" class="cam-analyzing-error" hidden></p>
+        <button type="button" class="btn-secondary" id="bi-analyzing-retry" hidden>다시 시도</button>
+      </div>
     </div>
   </div>
 </div>
@@ -168,5 +188,7 @@
 
 <script src="api.js"></script>
 <script src="dashboard.js"></script>
+<script src="interview-scores.js"></script>
+<script src="camera-interview.js"></script>
 </body>
 </html>

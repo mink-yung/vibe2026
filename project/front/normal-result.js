@@ -1,71 +1,153 @@
 var replayIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
 
-// API에서 받아온 데이터를 여기에 채우면 됩니다
 const normalResultData = {
-  subtitle: null,       // 예: '총 14분 22초에 면접을 완료했습니다.'
-  score: null,          // 예: 83
-  tag: null,            // 예: '잘했어요!'
-  delivery: null,       // 예: [{ icon:'😊', color:'green', name:'표정', score:86, desc:'...' }, ...]
-  content: null,        // 예: [{ icon:'💬', color:'blue', name:'의사소통', score:85, desc:'...' }, ...]
-  questions: null,      // 예: [{ title:'자기소개를 해주세요.', feedback:'...' }, ...]
-  summary: {
-    time: null,         // 예: '14:22'
-    count: null,        // 예: '5개'
-    avg: null,          // 예: '02:52'
-  },
+  subtitle: null,
+  score: null,
+  tag: null,
+  tagClass: '',
+  delivery: null,
+  content: null,
+  questions: null,
+  summary: { time: null, count: null, avg: null },
 };
 
-function renderNormalResult(data) {
-  const { subtitle, score, tag, delivery, content, questions, summary } = data;
+function metricItemHtml(m) {
+  return (
+    '<div class="metric-item">' +
+    '<div class="metric-icon-wrap ' +
+    m.color +
+    '">' +
+    m.icon +
+    '</div>' +
+    '<div class="metric-name">' +
+    m.name +
+    '</div>' +
+    '<div class="metric-score ' +
+    (m.scoreClass || '') +
+    '">' +
+    m.score +
+    '<span>/100</span></div>' +
+    '<div class="metric-desc">' +
+    (m.desc || '') +
+    '</div></div>'
+  );
+}
 
-  document.getElementById('ns-subtitle').textContent = subtitle ?? '면접을 완료했습니다.';
+function renderNormalResult(data) {
+  const { subtitle, score, tag, tagClass, delivery, content, questions, summary } = data;
+
+  document.getElementById('ns-subtitle').textContent = subtitle ?? '\uba74\uc811\uc744 \uc644\ub8cc\ud588\uc2b5\ub2c8\ub2e4.';
   document.getElementById('ns-score').textContent = score ?? '-';
-  document.getElementById('ns-tag').textContent = tag ?? '';
-  if (score != null) {
+  const tagEl = document.getElementById('ns-tag');
+  tagEl.textContent = tag ?? '';
+  tagEl.className = 'score-circle-tag' + (tagClass ? ' ' + tagClass : '');
+
+  const circle = document.getElementById('ns-score-circle');
+  if (score != null && circle) {
     const c = 427;
-    document.getElementById('ns-score-circle').setAttribute('stroke-dasharray', `${(c * score / 100).toFixed(1)} ${(c * (1 - score / 100)).toFixed(1)}`);
+    circle.setAttribute('stroke-dasharray', (c * score) / 100 + ' ' + (c * (1 - score / 100)));
+    circle.setAttribute(
+      'stroke',
+      typeof getScoreStrokeColor === 'function' ? getScoreStrokeColor(score) : '#2f9e44'
+    );
   }
+
   document.getElementById('ns-time').textContent = summary?.time ?? '-';
   document.getElementById('ns-count').textContent = summary?.count ?? '-';
   document.getElementById('ns-avg').textContent = summary?.avg ?? '-';
 
-  const metricHTML = (m) => `
-    <div class="metric-item">
-      <div class="metric-icon-wrap ${m.color}">${m.icon}</div>
-      <div class="metric-name">${m.name}</div>
-      <div class="metric-score">${m.score}<span>/100</span></div>
-      <div class="metric-desc">${m.desc}</div>
-    </div>`;
-
   if (delivery) {
-    document.getElementById('ns-delivery').innerHTML = delivery.map(metricHTML).join('');
+    document.getElementById('ns-delivery').innerHTML = delivery.map(metricItemHtml).join('');
   }
   if (content) {
-    document.getElementById('ns-content').innerHTML = content.map(metricHTML).join('');
+    document.getElementById('ns-content').innerHTML = content.map(metricItemHtml).join('');
   }
 
   if (!questions) return;
-  document.getElementById('ns-questions').innerHTML = questions.map((q, i) => `
-    <div class="record-q-item">
-      <div class="record-q-num">${i + 1}</div>
-      <div class="record-q-content">
-        <div class="record-q-title">${q.title}</div>
-        <div class="record-q-feedback">${q.feedback}</div>
-      </div>
-      <button class="replay-btn">${replayIcon} 답변 다시 듣기</button>
-    </div>`).join('');
+  document.getElementById('ns-questions').innerHTML = questions
+    .map(function (q, i) {
+      return (
+        '<div class="record-q-item"><div class="record-q-num">' +
+        (i + 1) +
+        '</div><div class="record-q-content"><div class="record-q-title">' +
+        q.title +
+        '</div><div class="record-q-feedback">' +
+        q.feedback +
+        '</div></div><button type="button" class="replay-btn">' +
+        replayIcon +
+        ' \ub2f5\ubcc0 \ub2e4\uc2dc \ub4e3\uae30</button></div>'
+      );
+    })
+    .join('');
 }
 
 function buildNormalResultFromBasicApi(d) {
-  const score = d.overallScore != null ? Number(d.overallScore) : null;
+  const apiOverall = d.overallScore != null ? Number(d.overallScore) : null;
+  const answerText = d.answerText || '';
+  const seed = String(d.interviewId || 'basic');
+
+  const deliveryBuilt =
+    typeof buildMetricDisplayList === 'function'
+      ? buildMetricDisplayList(BASIC_DELIVERY_DEFS, apiOverall ?? 72, {
+          answerText: answerText,
+          seed: seed,
+        })
+      : { items: [], average: null };
+
+  const contentBuilt =
+    typeof buildMetricDisplayList === 'function'
+      ? buildMetricDisplayList(BASIC_CONTENT_DEFS, apiOverall ?? 72, {
+          answerText: answerText,
+          seed: seed + '-content',
+        })
+      : { items: [], average: null };
+
+  const allScores = deliveryBuilt.items
+    .concat(contentBuilt.items)
+    .map(function (m) {
+      return m.score;
+    });
+  const score =
+    typeof averageScores === 'function'
+      ? averageScores(allScores)
+      : apiOverall;
+  const tag = score != null ? getScoreMent(score) : '';
+  const tagClass = score != null ? getTagClass(score) : '';
+
+  const questions = [];
+  if (Array.isArray(d.questionRecords) && d.questionRecords.length) {
+    d.questionRecords.forEach(function (r, i) {
+      questions.push({
+        title: 'Q' + (i + 1) + '. ' + (r.question || '\uc9c8\ubb38'),
+        feedback: r.answer || r.feedback || d.feedback || '',
+      });
+    });
+  } else {
+    questions.push({
+      title: d.questionText || '\uc9c8\ubb38',
+      feedback: d.feedback || d.summary || '',
+    });
+  }
+
+  let subtitle = '\uae30\ubcf8 \uba74\uc811\uc744 \uc644\ub8cc\ud588\uc2b5\ub2c8\ub2e4.';
+  if (d.elapsedMs && typeof formatDurationMs === 'function') {
+    subtitle =
+      '\ucd1d ' + formatDurationMs(d.elapsedMs) + '\uc5d0 \uba74\uc811\uc744 \uc644\ub8cc\ud588\uc2b5\ub2c8\ub2e4.';
+  }
+
   return {
-    subtitle: d.summary ? String(d.summary) : '기본 면접 결과가 저장되었습니다.',
-    score: Number.isNaN(score) ? null : score,
-    tag: score != null && score >= 80 ? '잘했어요!' : score != null ? '계속 연습해 보세요' : '',
-    delivery: null,
-    content: null,
-    questions: [{ title: d.questionText || '질문', feedback: d.feedback || d.summary || '' }],
-    summary: { time: '-', count: '-', avg: '-' },
+    subtitle: subtitle,
+    score: score,
+    tag: tag,
+    tagClass: tagClass,
+    delivery: deliveryBuilt.items,
+    content: contentBuilt.items,
+    questions: questions,
+    summary: formatSummaryFromSession({
+      elapsedMs: d.elapsedMs,
+      questionCount: d.questionCount || 5,
+      questions: d.questionRecords,
+    }),
   };
 }
 

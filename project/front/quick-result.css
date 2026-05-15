@@ -30,6 +30,12 @@
 .metric-icon-wrap.blue { background: #d0ebff; }
 .metric-icon-wrap.yellow { background: #fff3bf; }
 .metric-icon-wrap.orange { background: #ffe8cc; }
+.metric-icon-wrap.red { background: #ffe3e3; }
+.metric-score.score-warn { color: #e03131; }
+.score-circle-tag.good { color: #2f9e44; }
+.score-circle-tag.mid { color: #f76707; }
+.score-circle-tag.low { color: #f59f00; }
+.score-circle-tag.warning { color: #e03131; font-weight: 800; }
 .metric-name { font-size: 13px; font-weight: 700; color: #343a40; }
 .metric-score { font-size: 16px; font-weight: 800; color: #212529; }
 .metric-score span { font-size: 11px; font-weight: 400; color: #adb5bd; }

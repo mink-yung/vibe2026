@@ -72,3 +72,8 @@
 .summary-stat-val { font-size: 13px; font-weight: 700; color: #212529; }
 
 .retry-btn { width: 100%; padding: 14px; font-size: 14px; }
+
+.bs-persona-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.bs-persona-card { background: #f8f9fa; border-radius: 12px; padding: 16px; border: 1px solid #e9ecef; }
+.bs-persona-name { font-size: 14px; font-weight: 700; color: #212529; margin-bottom: 8px; }
+.bs-persona-text { font-size: 13px; color: #495057; line-height: 1.6; margin: 0; }

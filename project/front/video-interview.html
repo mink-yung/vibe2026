@@ -52,7 +52,7 @@
 
 <div class="main">
   <div class="topbar" id="authTopbar"></div>
-  <div id="videoInterviewSection" style="display:block; position:fixed; inset:0; z-index:500;">
+  <div id="videoInterviewSection" class="vi-theme-light" style="display:block; position:fixed; inset:0; z-index:500;">
     <div class="vi-wrap">
 
       <div class="vi-topbar">
@@ -60,13 +60,15 @@
           <span class="vi-badge">기본 면접</span>
         </div>
         <div class="vi-topbar-center">
-          <span class="vi-q-info" id="vi-q-info">-</span>
+          <span class="vi-topbar-stat-label">질문</span>
+          <span class="vi-q-progress" id="vi-q-progress">1 / 5</span>
           <span class="vi-divider">|</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span class="vi-timer" id="vi-timer">-</span>
+          <span class="vi-topbar-stat-label">진행 시간</span>
+          <span class="vi-timer" id="vi-timer">00:00</span>
+          <span id="vi-q-info" class="vi-q-info-sr" hidden aria-hidden="true"></span>
         </div>
         <div class="vi-topbar-right">
-          <button type="button" class="vi-end-btn" onclick="finishBasicVideoInterviewSubmit()">
+          <button type="button" class="vi-end-btn vi-exit-interview-btn" id="vi-exit-interview">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             면접 종료
           </button>
@@ -77,18 +79,20 @@
         <div class="vi-video-wrap interviewer">
           <div class="vi-video-label">면접관</div>
           <div class="vi-video-bg interviewer-bg">
+            <div class="vi-interviewer-caption vi-interviewer-caption-overlay">
+              <span class="vi-question-label" id="vi-q-label">Q1</span>
+              <p class="vi-question-text" id="vi-q-text">자기소개를 해주세요.</p>
+            </div>
             <div class="vi-avatar">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
           </div>
-          <div class="vi-question-overlay">
-            <span class="vi-question-label" id="vi-q-label">-</span>
-            <span class="vi-question-text" id="vi-q-text"></span>
-          </div>
         </div>
         <div class="vi-video-wrap user">
           <div class="vi-video-label">나 (지원자)</div>
+          <span class="vi-rec-badge" id="vi-rec-badge" hidden>● 녹화 중</span>
           <div class="vi-video-bg user-bg">
+            <video id="vi-user-video" class="cam-user-video" autoplay playsinline muted hidden></video>
             <div class="vi-avatar">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
@@ -96,14 +100,18 @@
         </div>
       </div>
 
+      <p class="vi-cam-error" id="vi-cam-error" hidden></p>
+
       <div class="vi-controls">
         <div class="vi-controls-left"></div>
         <div class="vi-controls-center">
-          <button class="vi-ctrl-btn" title="마이크">
+          <button type="button" class="vi-ctrl-btn cam-start-btn" id="vi-cam-start">면접 시작</button>
+          <button type="button" class="vi-ctrl-btn cam-end-answer-btn" id="vi-cam-end-answer" hidden>답변 종료</button>
+          <button class="vi-ctrl-btn" title="마이크" type="button" disabled>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
             <span>마이크</span>
           </button>
-          <button class="vi-ctrl-btn" title="카메라">
+          <button type="button" class="vi-ctrl-btn" title="카메라">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
             <span>카메라</span>
           </button>
@@ -115,6 +123,15 @@
         <div class="vi-controls-right"></div>
       </div>
 
+    </div>
+
+    <div id="vi-analyzing-overlay" class="cam-analyzing-overlay" hidden>
+      <div class="cam-analyzing-inner">
+        <div class="cam-spinner" aria-hidden="true"></div>
+        <p id="vi-analyzing-text">AI가 답변을 분석 중입니다...</p>
+        <p id="vi-analyzing-error" class="cam-analyzing-error" hidden></p>
+        <button type="button" class="btn-secondary" id="vi-analyzing-retry" hidden>다시 시도</button>
+      </div>
     </div>
   </div>
 </div>
@@ -160,5 +177,7 @@
 
 <script src="api.js"></script>
 <script src="dashboard.js"></script>
+<script src="interview-scores.js"></script>
+<script src="camera-interview.js"></script>
 </body>
 </html>

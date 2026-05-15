@@ -11,7 +11,6 @@
     { key: 'certifications', label: '자격증', kind: 'textarea' },
     { key: 'projects', label: '프로젝트 경험', kind: 'textarea' },
     { key: 'experience', label: '경력/활동 경험', kind: 'textarea' },
-    { key: 'resume_text', label: '이력서 내용', kind: 'textarea' },
     { key: 'portfolio_url', label: '포트폴리오 링크', kind: 'text' },
     { key: 'github_url', label: '깃허브 링크', kind: 'text' },
   ];

@@ -1,7 +1,55 @@
 #videoInterviewSection { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #fff; }
+#videoInterviewSection.vi-theme-light { color: #212529; }
+#videoInterviewSection.vi-theme-light .vi-wrap { background: #fff; }
+#videoInterviewSection.vi-theme-light .vi-topbar { background: #fff; border-bottom-color: #e9ecef; }
+#videoInterviewSection.vi-theme-light .vi-badge { border-color: #495057; color: #212529; }
+#videoInterviewSection.vi-theme-light .vi-topbar-center { color: #495057; }
+#videoInterviewSection.vi-theme-light .vi-q-info,
+#videoInterviewSection.vi-theme-light .vi-q-progress { color: #212529; font-weight: 700; }
+#videoInterviewSection.vi-theme-light .vi-videos { background: #f8f9fa; }
+#videoInterviewSection.vi-theme-light .interviewer-bg { background: #e9ecef; }
+#videoInterviewSection.vi-theme-light .user-bg { background: #dee2e6; border-top-color: #ced4da; }
+#videoInterviewSection.vi-theme-light .vi-controls { background: #fff; border-top-color: #e9ecef; }
+#videoInterviewSection.vi-theme-light .vi-topbar-stat-label { color: #868e96; font-weight: 600; }
+#videoInterviewSection.vi-theme-light .vi-interviewer-bg { position: relative; }
+#videoInterviewSection.vi-theme-light .vi-interviewer-caption-overlay {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  right: 16px;
+  z-index: 3;
+  max-width: min(92%, 720px);
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+}
+#videoInterviewSection.vi-theme-light .vi-interviewer-caption-overlay .vi-question-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #868e96;
+  margin-bottom: 8px;
+}
+#videoInterviewSection.vi-theme-light .vi-interviewer-caption-overlay .vi-question-text {
+  font-size: clamp(18px, 2.2vw, 26px);
+  font-weight: 700;
+  color: #212529;
+  line-height: 1.45;
+  margin: 0;
+}
+#videoInterviewSection .vi-interviewer-bg { position: relative; }
+#videoInterviewSection .vi-interviewer-caption-overlay {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 3;
+  max-width: 90%;
+}
 
 /* 전체 레이아웃 */
-#videoInterviewSection .vi-wrap { display: flex; flex-direction: column; height: 100%; background: #111; }
+#videoInterviewSection .vi-wrap { display: flex; flex-direction: column; height: 100%; background: #111; position: relative; }
 
 /* 상단 바 */
 #videoInterviewSection .vi-topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; background: #1a1a1a; border-bottom: 1px solid #2a2a2a; flex-shrink: 0; }
@@ -38,3 +86,25 @@
 #videoInterviewSection .vi-ctrl-btn:hover { background: #3a3a3a; color: #fff; }
 #videoInterviewSection .vi-ctrl-btn.end { background: #e03131; color: #fff; }
 #videoInterviewSection .vi-ctrl-btn.end:hover { background: #c92a2a; }
+#videoInterviewSection .vi-end-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#videoInterviewSection .cam-user-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+#videoInterviewSection .vi-video-wrap.user.cam-recording .vi-video-bg { box-shadow: inset 0 0 0 2px #e03131; }
+#videoInterviewSection .vi-rec-badge { position: absolute; top: 14px; right: 16px; font-size: 12px; font-weight: 700; color: #ff6b6b; background: rgba(0,0,0,0.55); padding: 4px 10px; border-radius: 20px; z-index: 2; }
+#videoInterviewSection .vi-cam-error { text-align: center; font-size: 12px; color: #ff8787; padding: 0 24px 8px; margin: 0; }
+#videoInterviewSection .vi-ctrl-btn.cam-start-btn { background: #2f9e44; color: #fff; }
+#videoInterviewSection .vi-ctrl-btn.cam-start-btn:hover { background: #37b24d; }
+#videoInterviewSection .vi-ctrl-btn.cam-end-answer-btn { background: #e03131; color: #fff; }
+#videoInterviewSection .vi-ctrl-btn.cam-end-answer-btn:hover { background: #c92a2a; }
+#videoInterviewSection .cam-analyzing-overlay[hidden],
+#videoInterviewSection .vi-end-btn[hidden],
+#videoInterviewSection .vi-ctrl-btn.cam-end-answer-btn[hidden],
+#videoInterviewSection .vi-rec-badge[hidden] {
+  display: none !important;
+  pointer-events: none !important;
+}
+#videoInterviewSection .cam-analyzing-overlay { position: absolute; inset: 0; z-index: 600; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; }
+#videoInterviewSection .cam-analyzing-inner { text-align: center; padding: 24px; max-width: 360px; }
+#videoInterviewSection .cam-analyzing-inner p { color: #fff; font-size: 15px; margin: 16px 0 0; line-height: 1.5; }
+#videoInterviewSection .cam-analyzing-error { color: #ff8787 !important; font-size: 13px !important; margin-top: 10px !important; }
+#videoInterviewSection .cam-spinner { width: 40px; height: 40px; margin: 0 auto; border: 3px solid rgba(255,255,255,0.25); border-top-color: #fff; border-radius: 50%; animation: cam-spin 0.8s linear infinite; }
+@keyframes cam-spin { to { transform: rotate(360deg); } }
