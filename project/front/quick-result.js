@@ -54,16 +54,23 @@ function buildQuickResultFromApiPayload(p) {
   const score = p.overallScore != null ? Number(p.overallScore) : null;
   const fb = p.feedback ? String(p.feedback) : '';
   const qs = [];
+  if (fb) qs.push({ title: 'AI 피드백', feedback: fb });
   if (p.summary) qs.push({ title: '요약', feedback: String(p.summary) });
-  if (fb) qs.push({ title: '피드백', feedback: fb });
   if (p.nextQuestion) qs.push({ title: '다음 질문 제안', feedback: String(p.nextQuestion) });
+
+  const isAudio = p.mode === 'quick_audio';
+  let subtitle = isAudio ? '음성 빠른면접 결과가 저장되었습니다.' : '빠른면접 결과가 저장되었습니다.';
+  if (p.interviewId != null) {
+    subtitle += ' (기록 #' + p.interviewId + ')';
+  }
+
   return {
-    subtitle: '빠른면접 결과가 저장되었습니다.',
+    subtitle,
     score,
     tag: score != null && score >= 80 ? '잘했어요!' : score != null ? '계속 연습해 보세요' : '',
     metrics: null,
     questions: qs.length ? qs : null,
-    summary: { time: '-', count: '-', avg: '-' },
+    summary: { time: '-', count: isAudio ? '3개' : '-', avg: '-' },
   };
 }
 

@@ -55,6 +55,7 @@
   <div id="irSection" style="">
     <div class="ir-page">
 
+      <div id="ir-toast" class="ir-toast" hidden role="status"></div>
       <div class="ir-header">
         <div class="ir-title">면접기록</div>
         <div class="ir-subtitle">지금까지 진행한 모든 면접 기록을 한눈에 확인해보세요.</div>
@@ -136,12 +137,43 @@
               <th>카테고리</th>
               <th>소요 시간</th>
               <th>점수</th>
+              <th>관리</th>
             </tr>
           </thead>
           <tbody id="irTableBody"></tbody>
         </table>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- 면접 상세 모달 -->
+<div class="modal-overlay" id="irDetailModal" onclick="irDetailModalOutside(event)">
+  <div class="modal-box ir-detail-modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">면접 기록 상세</span>
+      <button type="button" class="modal-close-btn" onclick="closeIrDetailModal()" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body" id="ir-detail-body">
+      <p class="ir-detail-loading">불러오는 중…</p>
+    </div>
+  </div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="modal-overlay" id="irDeleteModal" onclick="irDeleteModalOutside(event)">
+  <div class="modal-box modal-box-auth" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">면접 기록 삭제</span>
+      <button type="button" class="modal-close-btn" onclick="closeIrDeleteModal()" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="ir-delete-msg">이 면접 기록을 삭제하시겠습니까? 삭제된 기록은 복구할 수 없습니다.</p>
+      <div class="ir-delete-actions">
+        <button type="button" class="btn-secondary" onclick="closeIrDeleteModal()">취소</button>
+        <button type="button" class="btn-primary ir-delete-confirm" onclick="confirmIrDelete()">삭제</button>
+      </div>
     </div>
   </div>
 </div>

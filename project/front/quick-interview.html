@@ -78,6 +78,14 @@
               <span id="qi-timer">-</span>
             </span>
           </div>
+          <p class="question-sub" id="qi-speech-unsupported" hidden>이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 사용을 권장합니다.</p>
+          <div class="qi-lang-row">
+            <label for="qi-lang-select">음성 언어</label>
+            <select id="qi-lang-select">
+              <option value="ko-KR">한국어</option>
+              <option value="en-US">English</option>
+            </select>
+          </div>
           <div class="voice-icon">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="9" y1="18" x2="9" y2="6"/><line x1="6" y1="15" x2="6" y2="9"/>
@@ -86,13 +94,18 @@
               <line x1="21" y1="13" x2="21" y2="11"/>
             </svg>
           </div>
-          <div class="question-text" id="qi-question">-</div>
+          <div class="question-text" id="qi-question">면접 시작 버튼을 눌러 주세요.</div>
           <div class="question-sub" id="qi-question-sub"></div>
+          <p class="question-sub" id="qi-status"></p>
+          <p class="question-sub qi-live-transcript" id="qi-live-transcript"></p>
+          <div class="qi-answers-log" id="qi-answers-log"></div>
           <div class="waveform" id="waveform"></div>
-          <button type="button" class="stop-btn" onclick="finishQuickInterviewSubmit()">■&nbsp; 답변 중지</button>
-          <div class="voice-note">
+          <button type="button" class="stop-btn" id="qi-start-btn">면접 시작</button>
+          <button type="button" class="stop-btn" id="qi-stop-btn" hidden>■&nbsp; 답변 중지</button>
+          <p class="question-sub qi-error-msg" id="qi-error" hidden></p>
+          <div class="voice-note" id="qi-voice-note">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-            음성으로 답변을 시작하면 녹음이 자동으로 진행됩니다.
+            <span id="qi-voice-note-text">면접 시작 후 질문이 표시되고 음성 인식이 진행됩니다.</span>
           </div>
         </div>
 

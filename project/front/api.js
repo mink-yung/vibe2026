@@ -101,6 +101,14 @@ async function apiPostInterviewsQuick(body) {
   return apiInterviewFetch('/api/interviews/quick', { method: 'POST', body: body ?? {} });
 }
 
+/** 빠른면접 음성(STT) 결과 — POST /api/interviews/quick/audio */
+async function createQuickAudioInterview(payload) {
+  return apiInterviewFetch('/api/interviews/quick/audio', {
+    method: 'POST',
+    body: payload ?? {},
+  });
+}
+
 async function apiPostInterviewsBasic(body) {
   return apiInterviewFetch('/api/interviews/basic', { method: 'POST', body: body ?? {} });
 }
@@ -119,4 +127,12 @@ async function apiGetInterviewsRecentAnalysis() {
 
 async function apiGetInterviewsRecentSummary() {
   return apiInterviewFetch('/api/interviews/recent/summary', { method: 'GET' });
+}
+
+async function getInterviewDetail(interviewId) {
+  return apiInterviewFetch(`/api/interviews/${interviewId}`, { method: 'GET' });
+}
+
+async function deleteInterview(interviewId) {
+  return apiInterviewFetch(`/api/interviews/${interviewId}`, { method: 'DELETE' });
 }

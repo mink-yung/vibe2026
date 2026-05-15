@@ -1,40 +1,136 @@
 ================================================================================
-  front 폴더 — HTML 파일 이름 ↔ 화면(기능) 정리
+  front 폴더 — 페이지·스크립트·백엔드 API 연동 정리 (현재 구현 기준)
 ================================================================================
 
 ※ 기본면접 / 실전면접 종료 후 「🎉 수고하셨어요!」와 결과·피드백 UI는 각각
    별도 HTML로 분리되어 있습니다.
 
-  · 기본면접(영상 면접) 종료 후 결과 페이지 → normal-result.html
-  · 실전면접(다면접관 화면) 종료 후 결과 페이지 → basic-result.html
+  · 기본면접(영상 면접) 종료 후 결과 → normal-result.html
+  · 실전면접(다면접관 화면) 종료 후 결과 → basic-result.html
 
-※ 코드·파일명 쪽에서는 예전부터 이렇게 붙어 있어 혼동하기 쉽습니다.
+※ 코드·파일명과 화면 라벨이 다릅니다 (혼동 주의).
 
-  · 화면에서 「기본면접」카드 → 진행: video-interview.html  → 결과: normal-result.html
-  · 화면에서 「실전면접」카드 → 진행: basic-interview.html   → 결과: basic-result.html
+  · 화면 「기본면접」 → 진행: video-interview.html  → 결과: normal-result.html
+  · 화면 「실전면접」 → 진행: basic-interview.html   → 결과: basic-result.html
+  · 화면 「빠른면접」 → 진행: quick-interview.html  → 결과: quick-result.html
 
-  (파일 이름의 video / normal 은 기본면접 플로우, basic 은 실전면접 플로우에 대응)
+  (파일명 video/normal = 기본면접 플로우, basic = 실전면접 플로우)
 
 --------------------------------------------------------------------------------
-파일명                    | 사용자 입장에서의 화면
+공통 UI
 --------------------------------------------------------------------------------
-dashboard.html            | 랜딩(홈), 요약 카드, 면접 태도·역량·피드백 모달, 로그인 모달
-mock-interview.html       | 모의면접 — 빠른/기본/실전 면접 유형 선택
-quick-interview.html      | 빠른면접 진행
-quick-result.html         | 빠른면접 종료 후 결과(수고하셨어요 + 빠른면접 피드백 UI)
-video-interview.html      | 기본면접 진행(면접관·나 화면, vi-* 스타일)
-normal-result.html        | 기본면접 종료 후 결과(수고하셨어요 + 전달력/내용 등, ns-* 데이터)
-basic-interview.html      | 실전면접 진행(AI 면접관 3인 등, bi-* 스타일)
-basic-result.html         | 실전면접 종료 후 결과(수고하셨어요 + 레이더·AI 피드백 블록 등)
-interview-analysis.html   | 면접분석(평균 점수, 태도/역량 상세 레이아웃)
-ai-feedback.html          | AI 피드백 전용 페이지(날짜 탭·강점·보완점·추천 학습)
-interview-record.html     | 면접기록 목록·통계
-mypage.html               | 마이페이지(이름·이메일, GET /api/auth/me 동기화), 상단 메뉴에서 이동
-signup.html               | 회원가입
-api.js                    | API_BASE, localStorage 토큰·유저, Bearer 붙는 apiAuthFetch 및 면접 API 래퍼
+  · 좌측 사이드바: 홈 / 모의면접 / 면접분석 / AI피드백 / 면접기록 (대부분 HTML 공통)
+  · 상단 authTopbar: dashboard.js — 로그인 시 이름·마이페이지 링크, 비로그인 시 로그인 버튼
+  · 로그인 모달: dashboard.html 등 — POST /api/auth/login (Bearer 없이 fetch)
+  · 인증 저장: api.js — localStorage `token`, `user` (JWT + 사용자 정보)
+
+--------------------------------------------------------------------------------
+면접 플로우 (로그인 필요 — 면접 API는 토큰 필수)
 --------------------------------------------------------------------------------
 
-공통 스크립트 라우팅: 대부분의 페이지에서 dashboard.js 의 showSection() 이
-해당 섹션이 없으면 위 파일명으로 location 이동하도록 연결되어 있습니다.
+  mock-interview.html
+       ├─ 빠른면접  → quick-interview.html  ─[종료]→ POST /interviews/quick  → quick-result.html
+       ├─ 기본면접  → video-interview.html  ─[종료]→ POST /interviews/basic → normal-result.html
+       └─ 실전면접  → basic-interview.html  ─[종료]→ POST /interviews/real   → basic-result.html
 
-(이 파일 위치: front/PAGE_MAP.txt)
+  · 진행 중 「나가기」(video / basic): 경고 모달 — 저장 안 됨 안내, 「다시 보지 않기」 빨간 버튼
+    (localStorage: interviewExitWarnDontShow_basic | _real)
+  · 영상·음성 STT: UI만 있음. 실제 제출은 화면 텍스트/플레이스홀더 답변으로 API 호출
+
+--------------------------------------------------------------------------------
+HTML 페이지
+--------------------------------------------------------------------------------
+파일명                    | 화면·역할                          | 전용 JS        | 백엔드 API (연동됨)
+-------------------------|-----------------------------------|----------------|---------------------------
+dashboard.html            | 홈·히어로, 태도/역량 카드, 최근 기록  | —              | GET history, analysis, summary (로그인 시)
+                          | 요약, 피드백 모달, 로그인 모달       |                |
+mock-interview.html       | 빠른/기본/실전 면접 유형 선택        | —              | —
+quick-interview.html      | 빠른면접 진행 (질문·파형 UI)         | quick-interview.js | POST /interviews/quick
+quick-result.html         | 빠른면접 결과·수고 화면              | quick-result.js    | sessionStorage ← quick API 응답
+video-interview.html      | 기본면접 진행 (vi-* 영상 레이아웃)   | — (dashboard.js)   | POST /interviews/basic (종료 시)
+normal-result.html        | 기본면접 결과 (ns-*)                | normal-result.js   | sessionStorage ← basic API 응답
+basic-interview.html      | 실전면접 진행 (bi-* 3인 면접관)     | — (dashboard.js)   | POST /interviews/real (종료 시)
+basic-result.html         | 실전면접 결과 (레이더·피드백 블록)   | basic-result.js    | sessionStorage ← real API 응답
+interview-analysis.html   | 면접분석 단독 (레이더·요약 패널)     | —              | GET recent/analysis, summary
+ai-feedback.html          | AI 피드백 (날짜 탭·강점·보완·학습)   | —              | GET recent/analysis, summary
+interview-record.html     | 면접기록 통계·목록 테이블            | interview-record.js | GET /interviews/history
+mypage.html               | 마이페이지 (계정/상세/탈퇴 탭)       | mypage.js          | GET me, profile · PATCH profile · DELETE account
+signup.html               | 회원가입 (단독 페이지)               | 인라인 script      | POST /api/auth/register
+
+※ 위 HTML 중 mock·면접·결과·분석·기록·마이페이지 등은 api.js + dashboard.js 공통 로드.
+※ signup.html 은 dashboard.css 만 사용 (사이드바 없음).
+
+--------------------------------------------------------------------------------
+공통·전용 스크립트
+--------------------------------------------------------------------------------
+api.js
+  · API_BASE = http://localhost:3000
+  · getStoredAuthToken / saveAuthToStorage / clearStoredAuth
+  · apiAuthFetch — 인증 API (Bearer 선택)
+  · apiInterviewFetch — 면접 API (Bearer 필수)
+  · 래퍼: auth/me, profile GET·PATCH, account DELETE,
+          interviews quick·basic·real POST, history·recent/analysis·summary GET
+
+dashboard.js
+  · showSection() — 현재 페이지에 섹션 없으면 SECTION_PAGE 경로로 이동
+  · 로그인 모달·탑바·차트·모달(태도/역량/피드백)
+  · finishBasicVideoInterviewSubmit / finishRealInterviewSubmit
+  · 면접 나가기 모달 (openInterviewExitWarnModal)
+  · initDashboardInterviewApi — 홈 카드·최근 기록
+  · initInterviewAnalysisStandaloneApi — interview-analysis.html
+  · initAiFeedbackInlinePage — ai-feedback.html (data-page="ai-feedback")
+
+quick-interview.js    · finishQuickInterviewSubmit → quick-result 이동
+quick-result.js       · sessionStorage `quickInterviewLastResult` 렌더
+normal-result.js      · sessionStorage `normalInterviewLastResult` 렌더
+basic-result.js       · sessionStorage `basicInterviewLastResult` 렌더 (3인 피드백 매핑)
+interview-record.js   · history → 통계·테이블 (quick/basic/real → 유형 뱃지)
+mypage.js             · 계정정보·상세정보(조회/수정/취소 모달)·회원탈퇴 모달
+
+--------------------------------------------------------------------------------
+스타일시트 (페이지별 추가)
+--------------------------------------------------------------------------------
+dashboard.css           · 공통 레이아웃, 버튼, 모달, 마이페이지, 나가기 모달(다시보지않기 빨강)
+quick-interview.css     · 빠른면접
+video-interview.css     · 기본면접 진행
+basic-interview.css     · 실전면접 진행
+quick-result.css        · 빠른면접 결과
+normal-result.css       · 기본면접 결과
+basic-result.css        · 실전면접 결과
+interview-record.css    · 면접기록
+
+--------------------------------------------------------------------------------
+페이지 이동 (dashboard.js SECTION_PAGE)
+--------------------------------------------------------------------------------
+  dash → dashboard.html          mock → mock-interview.html
+  analysis → interview-analysis.html    ir → interview-record.html
+  quickInterview → quick-interview.html   quick → quick-result.html
+  videoInterview → video-interview.html   normal → normal-result.html
+  basicInterview → basic-interview.html   basic → basic-result.html
+
+  ai-feedback.html · mypage.html · signup.html 은 location.href 로 직접 이동.
+
+--------------------------------------------------------------------------------
+마이페이지 (mypage.html) 탭
+--------------------------------------------------------------------------------
+  계정정보   · GET /api/auth/me — 이름, 이메일, 가입일
+  상세정보   · GET /api/auth/profile — 조회·요약 보기 / 수정·PATCH / 작성 취소 모달
+             · 필드: 나이, 출신대학, 전공, 취미, 특기, 희망직무, 경력수준, 기술/역량,
+               자격증, 프로젝트, 경력/활동, 이력서, 포트폴리오·깃허브 URL
+  회원탈퇴   · DELETE /api/auth/account — 확인 모달 후 삭제 → 홈 이동
+
+--------------------------------------------------------------------------------
+프론트에서 아직 미연동 (백엔드 api.txt 계획 항목)
+--------------------------------------------------------------------------------
+  · GET    /api/interviews/:interviewId  — 면접 상세
+  · DELETE /api/interviews/:interviewId  — 면접 기록 삭제
+  · POST   /api/interviews/quick/audio   — 빠른면접 음성
+  · POST   /api/interviews/basic/audio   — 기본면접 음성
+  · GET    /api/personas                 — 페르소나 목록 (백엔드만 존재)
+
+--------------------------------------------------------------------------------
+보안
+--------------------------------------------------------------------------------
+  · OpenAI API 키·model 은 프론트에 없음. AI 호출은 백엔드만.
+
+(이 파일 위치: project/front/PAGE_MAP.txt)

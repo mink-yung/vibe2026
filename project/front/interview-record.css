@@ -43,3 +43,29 @@
 
 .ir-time { color: #868e96; font-size: 12.5px; }
 .ir-category { color: #495057; font-size: 12.5px; }
+
+.ir-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ir-btn { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer; }
+.ir-btn-detail { background: #f1f3f5; color: #343a40; }
+.ir-btn-detail:hover { background: #e9ecef; }
+.ir-btn-delete { background: #fff5f5; color: #e03131; border: 1px solid #ffc9c9; }
+.ir-btn-delete:hover { background: #ffe3e3; }
+
+.ir-toast { margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+.ir-toast.ir-toast-success { background: #d3f9d8; color: #2b8a3e; }
+.ir-toast.ir-toast-error { background: #ffe3e3; color: #c92a2a; }
+
+.ir-detail-modal { width: 560px; max-width: 95vw; max-height: 88vh; }
+.ir-detail-loading { color: #868e96; font-size: 13px; margin: 0; }
+.ir-detail-field { margin-bottom: 14px; }
+.ir-detail-label { font-size: 11px; font-weight: 700; color: #adb5bd; margin-bottom: 4px; }
+.ir-detail-value { font-size: 13px; color: #343a40; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.ir-detail-feedbacks { margin-top: 8px; }
+.ir-feedback-block { background: #f8f9fa; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+.ir-feedback-block:last-child { margin-bottom: 0; }
+.ir-feedback-persona { font-size: 12px; font-weight: 700; color: #495057; margin-bottom: 8px; }
+
+.ir-delete-msg { font-size: 14px; line-height: 1.6; color: #343a40; margin: 0 0 20px; }
+.ir-delete-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.ir-delete-confirm { background: #e03131 !important; }
+.ir-delete-confirm:hover { background: #c92a2a !important; }

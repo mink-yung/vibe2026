@@ -115,6 +115,71 @@ router.post("/quick", async (req, res) => {
   }
 });
 
+// 빠른면접 음성 결과 저장
+// POST /api/interviews/quick/audio
+router.post("/quick/audio", async (req, res) => {
+  try {
+    const { questionText, answerText, transcript } = req.body;
+    const userId = req.user.id;
+
+    const finalAnswerText = answerText || transcript;
+
+    if (!finalAnswerText) {
+      return res.status(400).json({
+        success: false,
+        message: "answerText 또는 transcript가 필요합니다."
+      });
+    }
+
+    const aiResult = await generateInterviewFeedback({
+      persona: "friendly",
+      questionText: questionText || null,
+      answerText: finalAnswerText
+    });
+
+    const summary = aiResult.summary;
+    const overallScore = aiResult.overallScore;
+
+    const [interviewResult] = await pool.execute(
+      `INSERT INTO interviews 
+       (user_id, mode, question_text, answer_text, summary, overall_score)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [userId, "quick_audio", questionText || null, finalAnswerText, summary, overallScore]
+    );
+
+    const interviewId = interviewResult.insertId;
+
+    await pool.execute(
+      `INSERT INTO interview_feedbacks
+       (interview_id, persona, feedback, next_question)
+       VALUES (?, ?, ?, ?)`,
+      [interviewId, "friendly", aiResult.feedback, aiResult.nextQuestion]
+    );
+
+    return res.status(201).json({
+      success: true,
+      interviewId,
+      mode: "quick_audio",
+      persona: "friendly",
+      questionText: questionText || null,
+      answerText: finalAnswerText,
+      transcript: finalAnswerText,
+      feedback: aiResult.feedback,
+      nextQuestion: aiResult.nextQuestion,
+      summary,
+      overallScore
+    });
+  } catch (error) {
+    console.error("빠른면접 음성 저장 오류:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "서버 오류가 발생했습니다.",
+      error: error.message
+    });
+  }
+});
+
 // 기본면접 - 친절 페르소나 자동 사용
 // POST /api/interviews/basic
 router.post("/basic", async (req, res) => {
@@ -177,6 +242,71 @@ router.post("/basic", async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "서버 오류가 발생했습니다."
+    });
+  }
+});
+
+// 기본면접 음성 결과 저장
+// POST /api/interviews/basic/audio
+router.post("/basic/audio", async (req, res) => {
+  try {
+    const { questionText, answerText, transcript } = req.body;
+    const userId = req.user.id;
+
+    const finalAnswerText = answerText || transcript;
+
+    if (!questionText || !finalAnswerText) {
+      return res.status(400).json({
+        success: false,
+        message: "questionText와 answerText 또는 transcript가 필요합니다."
+      });
+    }
+
+    const aiResult = await generateInterviewFeedback({
+      persona: "friendly",
+      questionText,
+      answerText: finalAnswerText
+    });
+
+    const summary = aiResult.summary;
+    const overallScore = aiResult.overallScore;
+
+    const [interviewResult] = await pool.execute(
+      `INSERT INTO interviews 
+       (user_id, mode, question_text, answer_text, summary, overall_score)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [userId, "basic_audio", questionText, finalAnswerText, summary, overallScore]
+    );
+
+    const interviewId = interviewResult.insertId;
+
+    await pool.execute(
+      `INSERT INTO interview_feedbacks
+       (interview_id, persona, feedback, next_question)
+       VALUES (?, ?, ?, ?)`,
+      [interviewId, "friendly", aiResult.feedback, aiResult.nextQuestion]
+    );
+
+    return res.status(201).json({
+      success: true,
+      interviewId,
+      mode: "basic_audio",
+      persona: "friendly",
+      questionText,
+      answerText: finalAnswerText,
+      transcript: finalAnswerText,
+      feedback: aiResult.feedback,
+      nextQuestion: aiResult.nextQuestion,
+      summary,
+      overallScore
+    });
+  } catch (error) {
+    console.error("기본면접 음성 저장 오류:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "서버 오류가 발생했습니다.",
+      error: error.message
     });
   }
 });
@@ -403,6 +533,139 @@ router.get("/recent/summary", async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "서버 오류가 발생했습니다."
+    });
+  }
+});
+
+// 특정 면접 상세 조회
+// GET /api/interviews/:interviewId
+router.get("/:interviewId", async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { interviewId } = req.params;
+
+    const [interviews] = await pool.execute(
+      `SELECT 
+        id AS interviewId,
+        mode,
+        question_text AS questionText,
+        answer_text AS answerText,
+        summary,
+        overall_score AS overallScore,
+        created_at AS createdAt
+       FROM interviews
+       WHERE id = ?
+         AND user_id = ?`,
+      [interviewId, userId]
+    );
+
+    if (interviews.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "면접 기록을 찾을 수 없습니다."
+      });
+    }
+
+    const [feedbacks] = await pool.execute(
+      `SELECT
+        id AS feedbackId,
+        persona,
+        feedback,
+        next_question AS nextQuestion,
+        created_at AS createdAt
+       FROM interview_feedbacks
+       WHERE interview_id = ?
+       ORDER BY id ASC`,
+      [interviewId]
+    );
+
+    return res.json({
+      success: true,
+      interview: {
+        ...interviews[0],
+        feedbacks
+      }
+    });
+  } catch (error) {
+    console.error("면접 상세 조회 오류:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "서버 오류가 발생했습니다.",
+      error: error.message
+    });
+  }
+});
+
+// 특정 면접 기록 삭제
+// DELETE /api/interviews/:interviewId
+router.delete("/:interviewId", async (req, res) => {
+  const connection = await pool.getConnection();
+
+  try {
+    const userId = req.user.id;
+    const { interviewId } = req.params;
+
+    if (!interviewId || isNaN(Number(interviewId))) {
+      connection.release();
+
+      return res.status(400).json({
+        success: false,
+        message: "올바른 interviewId가 필요합니다."
+      });
+    }
+
+    await connection.beginTransaction();
+
+    const [interviews] = await connection.execute(
+      `SELECT id
+       FROM interviews
+       WHERE id = ?
+         AND user_id = ?`,
+      [interviewId, userId]
+    );
+
+    if (interviews.length === 0) {
+      await connection.rollback();
+      connection.release();
+
+      return res.status(404).json({
+        success: false,
+        message: "삭제할 면접 기록을 찾을 수 없습니다."
+      });
+    }
+
+    await connection.execute(
+      `DELETE FROM interview_feedbacks
+       WHERE interview_id = ?`,
+      [interviewId]
+    );
+
+    await connection.execute(
+      `DELETE FROM interviews
+       WHERE id = ?
+         AND user_id = ?`,
+      [interviewId, userId]
+    );
+
+    await connection.commit();
+    connection.release();
+
+    return res.json({
+      success: true,
+      message: "면접 기록이 삭제되었습니다.",
+      deletedInterviewId: Number(interviewId)
+    });
+  } catch (error) {
+    await connection.rollback();
+    connection.release();
+
+    console.error("면접 기록 삭제 오류:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "서버 오류가 발생했습니다.",
+      error: error.message
     });
   }
 });

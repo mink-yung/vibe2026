@@ -173,7 +173,7 @@ router.get("/profile", authRequired, async (req, res) => {
     const [rows] = await pool.execute(
       `SELECT age, university, major, hobby, specialty,
               desired_position, career_level, skills, certifications,
-              projects, experience, resume_text, portfolio_url, github_url
+              projects, experience, portfolio_url, github_url
          FROM users WHERE id = ?`,
       [req.user.id]
     );
@@ -200,7 +200,6 @@ router.get("/profile", authRequired, async (req, res) => {
         certifications: r.certifications,
         projects: r.projects,
         experience: r.experience,
-        resume_text: r.resume_text,
         portfolio_url: r.portfolio_url,
         github_url: r.github_url
       }
@@ -244,7 +243,7 @@ router.patch("/profile", authRequired, async (req, res) => {
       `UPDATE users SET
         age = ?, university = ?, major = ?, hobby = ?, specialty = ?,
         desired_position = ?, career_level = ?, skills = ?, certifications = ?,
-        projects = ?, experience = ?, resume_text = ?, portfolio_url = ?, github_url = ?
+        projects = ?, experience = ?, portfolio_url = ?, github_url = ?
       WHERE id = ?`,
       [
         ageVal,
@@ -258,7 +257,6 @@ router.patch("/profile", authRequired, async (req, res) => {
         trimOrNull(b.certifications),
         trimOrNull(b.projects),
         trimOrNull(b.experience),
-        trimOrNull(b.resume_text),
         trimOrNull(b.portfolio_url),
         trimOrNull(b.github_url),
         req.user.id
