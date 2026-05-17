@@ -22,6 +22,9 @@ let recognition = null;
 let recognitionFinalBuffer = '';
 let interviewTimerId = null;
 let interviewStartedAt = null;
+/** mediaRecorder / getUserMedia는 추후 연동 — null-safe 정리용 */
+let mediaRecorder = null;
+let audioStream = null;
 
 const SpeechRecognitionCtor =
   typeof window !== 'undefined'
@@ -177,11 +180,14 @@ function updateUi() {
 
   if (stopBtn) {
     stopBtn.hidden = !state.isStarted;
-    stopBtn.disabled = state.isSubmitting || state.currentQuestionIndex >= QUICK_QUESTION_COUNT;
+    stopBtn.disabled =
+      state.isSubmitting ||
+      state.currentQuestionIndex >= QUICK_QUESTION_COUNT ||
+      !state.isListening;
     if (state.isSubmitting) {
       stopBtn.textContent = '피드백 생성 중…';
     } else {
-      stopBtn.innerHTML = '■&nbsp; 답변 중지';
+      stopBtn.textContent = '■ 답변 중지';
     }
   }
 
@@ -289,14 +295,51 @@ function startListening() {
   }
 }
 
-function stopListening() {
-  state.isListening = false;
-  if (recognition) {
+function stopMediaCaptureSafe() {
+  if (mediaRecorder) {
     try {
-      recognition.stop();
+      if (mediaRecorder.state && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
     } catch (_) {}
-    recognition = null;
+    mediaRecorder = null;
   }
+  if (audioStream) {
+    try {
+      audioStream.getTracks().forEach(function (track) {
+        try {
+          track.stop();
+        } catch (_) {}
+      });
+    } catch (_) {}
+    audioStream = null;
+  }
+}
+
+function stopListeningSafe() {
+  state.isListening = false;
+  const active = recognition;
+  recognition = null;
+  if (active) {
+    try {
+      if (typeof active.abort === 'function') {
+        active.abort();
+      }
+    } catch (_) {}
+    try {
+      active.stop();
+    } catch (_) {}
+    try {
+      active.onresult = null;
+      active.onerror = null;
+      active.onend = null;
+    } catch (_) {}
+  }
+  stopMediaCaptureSafe();
+}
+
+function stopListening() {
+  stopListeningSafe();
   updateUi();
 }
 
@@ -311,22 +354,34 @@ function requireLogin() {
   return false;
 }
 
-function onStartInterview() {
-  if (!requireLogin()) return;
-  if (!SpeechRecognitionCtor) {
-    setError('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 사용을 권장합니다.');
-    return;
+function onStartInterview(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
   }
-  setError(null);
-  state.isStarted = true;
-  state.currentQuestionIndex = 0;
-  state.transcripts = ['', '', ''];
-  state.currentTranscript = '';
-  state.isSubmitting = false;
-  state.result = null;
-  startInterviewTimer();
-  updateUi();
-  startListening();
+  try {
+    if (!requireLogin()) return;
+    if (!SpeechRecognitionCtor) {
+      setError('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 사용을 권장합니다.');
+      return;
+    }
+    setError(null);
+    stopListeningSafe();
+    state.isStarted = true;
+    state.currentQuestionIndex = 0;
+    state.transcripts = ['', '', ''];
+    state.currentTranscript = '';
+    state.isSubmitting = false;
+    state.result = null;
+    recognitionFinalBuffer = '';
+    startInterviewTimer();
+    updateUi();
+    startListening();
+  } catch (err) {
+    console.error(err);
+    setError('면접을 시작할 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
+    updateUi();
+  }
 }
 
 function buildCombinedPayload() {
@@ -406,37 +461,45 @@ async function submitQuickAudioInterview() {
   }
 }
 
-function onStopAnswerClick() {
-  if (!state.isStarted || state.isSubmitting) return;
-
-  if (!state.isListening) {
-    startListening();
-    return;
+function onStopAnswerClick(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
   }
+  try {
+    if (!state.isStarted || state.isSubmitting) return;
+    if (!state.isListening) return;
 
-  stopListening();
-  const text = state.currentTranscript.trim();
-  if (!text) {
-    setError('답변이 인식되지 않았습니다. 다시 답변해주세요.');
-    startListening();
-    return;
-  }
+    stopListeningSafe();
 
-  state.transcripts[state.currentQuestionIndex] = text;
-  state.currentTranscript = '';
-  recognitionFinalBuffer = '';
+    const text = (state.currentTranscript || '').trim();
+    if (!text) {
+      setError('답변이 인식되지 않았습니다. 다시 답변해 주세요.');
+      startListening();
+      return;
+    }
 
-  const nextIndex = state.currentQuestionIndex + 1;
-  state.currentQuestionIndex = nextIndex;
+    state.transcripts[state.currentQuestionIndex] = text;
+    state.currentTranscript = '';
+    recognitionFinalBuffer = '';
 
-  if (nextIndex >= QUICK_QUESTION_COUNT) {
+    const nextIndex = state.currentQuestionIndex + 1;
+    state.currentQuestionIndex = nextIndex;
+
+    if (nextIndex >= QUICK_QUESTION_COUNT) {
+      updateUi();
+      submitQuickAudioInterview();
+      return;
+    }
+
     updateUi();
-    submitQuickAudioInterview();
-    return;
+    startListening();
+  } catch (err) {
+    console.error(err);
+    stopListeningSafe();
+    setError('답변 처리 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    updateUi();
   }
-
-  updateUi();
-  startListening();
 }
 
 function onLangChange() {
@@ -444,7 +507,8 @@ function onLangChange() {
   if (!sel) return;
   state.selectedLang = sel.value === 'en-US' ? 'en-US' : 'ko-KR';
   if (state.isListening) {
-    stopListening();
+    stopListeningSafe();
+    updateUi();
     startListening();
   }
 }
@@ -464,9 +528,23 @@ function bindQuickInterviewUi() {
   const startBtn = $('qi-start-btn');
   const stopBtn = $('qi-stop-btn');
   const langSelect = $('qi-lang-select');
-  if (startBtn) startBtn.addEventListener('click', onStartInterview);
-  if (stopBtn) stopBtn.addEventListener('click', onStopAnswerClick);
-  if (langSelect) langSelect.addEventListener('change', onLangChange);
+
+  function bindClick(el, handler) {
+    if (!el || el.dataset.qiBound === '1') return;
+    el.dataset.qiBound = '1';
+    el.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      handler(e);
+    });
+  }
+
+  bindClick(startBtn, onStartInterview);
+  bindClick(stopBtn, onStopAnswerClick);
+  if (langSelect && langSelect.dataset.qiBound !== '1') {
+    langSelect.dataset.qiBound = '1';
+    langSelect.addEventListener('change', onLangChange);
+  }
 }
 
 /** 레거시 텍스트 빠른면접 (POST /api/interviews/quick) */
@@ -506,12 +584,22 @@ async function finishQuickInterviewSubmit() {
   }
 }
 
+function cleanupQuickInterview() {
+  stopListeningSafe();
+  stopInterviewTimer();
+}
+
 function initQuickInterviewPage() {
   if (!$('quickInterviewSection')) return;
   initWaveform();
   initSpeechUnsupportedBanner();
   bindQuickInterviewUi();
   updateUi();
+  if (!window.__qiUnloadBound) {
+    window.__qiUnloadBound = true;
+    window.addEventListener('beforeunload', cleanupQuickInterview);
+    window.addEventListener('pagehide', cleanupQuickInterview);
+  }
 }
 
 if (document.readyState === 'loading') {
