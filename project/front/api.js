@@ -86,6 +86,21 @@ async function apiPostAuthLogin(body) {
   return apiAuthFetch('/api/auth/login', { method: 'POST', body: body ?? {} });
 }
 
+async function apiPostAuthForgotPassword(body) {
+  return apiAuthFetch('/api/auth/forgot-password', { method: 'POST', body: body ?? {} });
+}
+
+async function apiPostAuthResetPassword(body) {
+  return apiAuthFetch('/api/auth/reset-password', { method: 'POST', body: body ?? {} });
+}
+
+/** API JSON에서 message 추출 */
+function pickApiMessage(data, fallback) {
+  if (!data || typeof data !== 'object') return fallback || '요청을 처리할 수 없습니다.';
+  if (typeof data.message === 'string' && data.message.trim()) return data.message.trim();
+  return fallback || '요청을 처리할 수 없습니다.';
+}
+
 async function apiGetAuthMe() {
   return apiAuthFetch('/api/auth/me', { method: 'GET' });
 }

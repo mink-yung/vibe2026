@@ -13,7 +13,6 @@
       <h1 class="auth-card-title">회원가입</h1>
       <p class="auth-card-desc">면접 연습과 AI 피드백을 위해 계정을 만드세요.</p>
       <form class="auth-form" id="signupForm" onsubmit="handleSignupSubmit(event)">
-        <div id="signup-success" class="auth-alert auth-alert-success" role="status" hidden></div>
         <div id="signup-error" class="auth-alert auth-alert-error" role="alert" hidden></div>
         <label class="auth-label" for="signup-name">이름</label>
         <input type="text" id="signup-name" class="auth-input" name="name" autocomplete="name" required placeholder="홍길동" />
@@ -34,11 +33,26 @@
 
         <button type="submit" class="btn-primary auth-submit">가입하기</button>
       </form>
-      <p class="auth-switch">이미 계정이 있으신가요? <a href="dashboard.html#login">로그인</a></p>
+      <p class="auth-switch">이미 계정이 있으신가요? <a href="login.html">로그인</a></p>
     </div>
   </div>
+
+  <div class="modal-overlay" id="signupSuccessModal" role="dialog" aria-labelledby="signupSuccessTitle" hidden>
+    <div class="modal-box modal-box-auth" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title" id="signupSuccessTitle">회원가입 안내</span>
+      </div>
+      <div class="modal-body">
+        <p class="auth-modal-message" id="signupSuccessMessage"></p>
+        <button type="button" class="btn-primary auth-submit" id="signupSuccessOk">확인</button>
+      </div>
+    </div>
+  </div>
+
   <script src="api.js"></script>
   <script>
+    var lastSignupEmail = '';
+
     function getSignupErrorEl() {
       return document.getElementById('signup-error');
     }
@@ -46,7 +60,7 @@
       var el = getSignupErrorEl();
       if (!el) return;
       el.textContent = msg || '가입에 실패했습니다.';
-      el.hidden = false;
+      el.hidden = !msg;
     }
     function clearSignupError() {
       var el = getSignupErrorEl();
@@ -54,23 +68,37 @@
       el.textContent = '';
       el.hidden = true;
     }
-    function setSignupSuccess(msg) {
-      var el = document.getElementById('signup-success');
-      if (!el) return;
-      el.textContent = msg || '';
-      el.hidden = !msg;
-    }
     function pickSignupErrorMessage(data) {
-      if (!data || typeof data !== 'object') return '가입 요청을 처리할 수 없습니다.';
-      if (typeof data.message === 'string' && data.message.trim()) return data.message.trim();
-      if (typeof data.detail === 'string' && data.detail.trim()) return data.detail.trim();
-      if (typeof data.error === 'string' && data.error.trim()) return data.error.trim();
-      return '가입 요청을 처리할 수 없습니다.';
+      return pickApiMessage(data, '가입 요청을 처리할 수 없습니다.');
     }
+
+    function openSignupSuccessModal(email) {
+      var modal = document.getElementById('signupSuccessModal');
+      var msgEl = document.getElementById('signupSuccessMessage');
+      if (!modal || !msgEl) return;
+      msgEl.textContent =
+        email + ' 로 보낸 메일을 이용해 인증 후 로그인해주세요.';
+      modal.hidden = false;
+      modal.classList.add('open');
+    }
+
+    function closeSignupSuccessModal() {
+      var modal = document.getElementById('signupSuccessModal');
+      if (modal) {
+        modal.classList.remove('open');
+        modal.hidden = true;
+      }
+      location.href = 'login.html';
+    }
+
+    document.getElementById('signupSuccessOk').addEventListener('click', closeSignupSuccessModal);
+    document.getElementById('signupSuccessModal').addEventListener('click', function (e) {
+      if (e.target.id === 'signupSuccessModal') closeSignupSuccessModal();
+    });
+
     async function handleSignupSubmit(e) {
       e.preventDefault();
       clearSignupError();
-      setSignupSuccess('');
       var p = document.getElementById('signup-password').value;
       var p2 = document.getElementById('signup-password2').value;
       if (p !== p2) {
@@ -91,20 +119,23 @@
         var data = await response.json().catch(function () { return {}; });
         if (!response.ok) {
           setSignupError(pickSignupErrorMessage(data));
+          if (response.status >= 500) {
+            alert(pickSignupErrorMessage(data));
+          }
           return;
         }
         if (data && data.success === false) {
           setSignupError(pickSignupErrorMessage(data));
           return;
         }
-        setSignupSuccess(
-          data.message ||
-            '인증 메일을 보냈습니다. 메일함(스팸함 포함)에서 인증 링크를 눌러 주세요.'
-        );
+        lastSignupEmail = email;
         document.getElementById('signupForm').reset();
+        openSignupSuccessModal(email);
       } catch (err) {
         console.error(err);
-        setSignupError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+        var errMsg = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.';
+        setSignupError(errMsg);
+        alert(errMsg);
       } finally {
         if (submitBtn) submitBtn.disabled = false;
       }
