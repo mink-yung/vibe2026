@@ -1,0 +1,49 @@
+#deviceCheckModal .modal-box-device {
+  max-width: 440px;
+  width: 92%;
+}
+#deviceCheckModal .device-check-preview {
+  width: 100%;
+  max-height: 220px;
+  border-radius: 10px;
+  background: #212529;
+  object-fit: cover;
+  display: block;
+  margin: 12px 0;
+}
+#deviceCheckModal .device-check-preview[hidden] {
+  display: none !important;
+}
+#deviceCheckModal .device-check-status {
+  font-size: 13px;
+  color: #495057;
+  margin: 8px 0 4px;
+  line-height: 1.5;
+}
+#deviceCheckModal .device-check-status.ok {
+  color: #2f9e44;
+  font-weight: 600;
+}
+#deviceCheckModal .device-check-status.err {
+  color: #e03131;
+}
+#deviceCheckModal .device-check-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+#deviceCheckModal .device-check-mic-icon {
+  width: 72px;
+  height: 72px;
+  margin: 16px auto;
+  border-radius: 50%;
+  background: #212529;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+#deviceCheckModal .device-check-mic-icon[hidden] {
+  display: none !important;
+}

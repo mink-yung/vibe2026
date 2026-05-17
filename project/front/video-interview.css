@@ -97,6 +97,7 @@
 #videoInterviewSection .vi-ctrl-btn.cam-end-answer-btn:hover { background: #c92a2a; }
 #videoInterviewSection .cam-analyzing-overlay[hidden],
 #videoInterviewSection .vi-end-btn[hidden],
+#videoInterviewSection .vi-ctrl-btn.cam-start-btn[hidden],
 #videoInterviewSection .vi-ctrl-btn.cam-end-answer-btn[hidden],
 #videoInterviewSection .vi-rec-badge[hidden] {
   display: none !important;

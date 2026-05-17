@@ -69,7 +69,9 @@ function updateCameraInterviewUi(cfg) {
   const showEndAnswer = isRecording && !isSubmitting && endActionsEnabled;
 
   if (cfg.startBtn) {
-    cfg.startBtn.hidden = isStarted || isSubmitting;
+    const hideStart = isStarted || isSubmitting;
+    cfg.startBtn.hidden = hideStart;
+    cfg.startBtn.style.display = hideStart ? 'none' : '';
     cfg.startBtn.disabled = isSubmitting || (cfg.errorEl && !cfg.errorEl.hidden);
   }
   const endBtns = [cfg.endAnswerBtn, cfg.endAnswerBtnTop].filter(Boolean);
@@ -236,6 +238,15 @@ async function onCameraInterviewStart(cfg, event) {
   }
 
   setCamError(cfg, null);
+
+  if (typeof openDeviceCheck === 'function') {
+    const deviceOk = await openDeviceCheck({
+      mode: 'video',
+      title: cfg.mode === 'real' ? '실전 면접 — 카메라·마이크 확인' : '기본 면접 — 카메라·마이크 확인',
+    });
+    if (!deviceOk) return;
+  }
+
   const stream = await requestCameraStream(cfg);
   if (!stream) return;
 

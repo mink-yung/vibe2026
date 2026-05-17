@@ -181,9 +181,7 @@ function updateUi() {
   if (stopBtn) {
     stopBtn.hidden = !state.isStarted;
     stopBtn.disabled =
-      state.isSubmitting ||
-      state.currentQuestionIndex >= QUICK_QUESTION_COUNT ||
-      !state.isListening;
+      state.isSubmitting || state.currentQuestionIndex >= QUICK_QUESTION_COUNT;
     if (state.isSubmitting) {
       stopBtn.textContent = '피드백 생성 중…';
     } else {
@@ -316,26 +314,61 @@ function stopMediaCaptureSafe() {
   }
 }
 
-function stopListeningSafe() {
+function stopListeningSafe(options) {
+  const keepResults = options && options.keepResults;
   state.isListening = false;
   const active = recognition;
   recognition = null;
   if (active) {
-    try {
-      if (typeof active.abort === 'function') {
-        active.abort();
-      }
-    } catch (_) {}
+    if (!keepResults) {
+      try {
+        if (typeof active.abort === 'function') active.abort();
+      } catch (_) {}
+    }
     try {
       active.stop();
     } catch (_) {}
-    try {
-      active.onresult = null;
-      active.onerror = null;
-      active.onend = null;
-    } catch (_) {}
+    if (!keepResults) {
+      try {
+        active.onresult = null;
+        active.onerror = null;
+        active.onend = null;
+      } catch (_) {}
+    }
   }
-  stopMediaCaptureSafe();
+  if (!keepResults) stopMediaCaptureSafe();
+}
+
+/** 답변 중지 시 최종 인식 결과를 기다린 뒤 텍스트 반환 */
+function finalizeListeningAnswer() {
+  return new Promise(function (resolve) {
+    if (!state.isListening && !recognition) {
+      resolve((state.currentTranscript || recognitionFinalBuffer || '').trim());
+      return;
+    }
+    state.isListening = false;
+    const active = recognition;
+    recognition = null;
+    if (!active) {
+      resolve((state.currentTranscript || recognitionFinalBuffer || '').trim());
+      return;
+    }
+    let settled = false;
+    const finish = function () {
+      if (settled) return;
+      settled = true;
+      resolve((state.currentTranscript || recognitionFinalBuffer || '').trim());
+    };
+    try {
+      active.onend = function () {
+        finish();
+      };
+      active.stop();
+    } catch (_) {
+      finish();
+    }
+    setTimeout(finish, 500);
+  });
 }
 
 function stopListening() {
@@ -354,7 +387,7 @@ function requireLogin() {
   return false;
 }
 
-function onStartInterview(event) {
+async function onStartInterview(event) {
   if (event) {
     event.preventDefault();
     event.stopPropagation();
@@ -364,6 +397,10 @@ function onStartInterview(event) {
     if (!SpeechRecognitionCtor) {
       setError('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 사용을 권장합니다.');
       return;
+    }
+    if (typeof openDeviceCheck === 'function') {
+      const deviceOk = await openDeviceCheck({ mode: 'audio', title: '빠른면접 — 마이크 확인' });
+      if (!deviceOk) return;
     }
     setError(null);
     stopListeningSafe();
@@ -461,20 +498,18 @@ async function submitQuickAudioInterview() {
   }
 }
 
-function onStopAnswerClick(event) {
+async function onStopAnswerClick(event) {
   if (event) {
     event.preventDefault();
     event.stopPropagation();
   }
   try {
     if (!state.isStarted || state.isSubmitting) return;
-    if (!state.isListening) return;
 
-    stopListeningSafe();
-
-    const text = (state.currentTranscript || '').trim();
+    const text = await finalizeListeningAnswer();
     if (!text) {
-      setError('답변이 인식되지 않았습니다. 다시 답변해 주세요.');
+      setError('답변이 인식되지 않았습니다. 마이크에 대고 다시 말씀해 주세요.');
+      updateUi();
       startListening();
       return;
     }

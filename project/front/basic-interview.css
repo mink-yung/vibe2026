@@ -82,6 +82,7 @@
 #basicInterviewSection .bi-ctrl-btn.cam-end-answer-btn:hover { background: #c92a2a; }
 #basicInterviewSection .cam-analyzing-overlay[hidden],
 #basicInterviewSection .bi-end-btn[hidden],
+#basicInterviewSection .bi-ctrl-btn.cam-start-btn[hidden],
 #basicInterviewSection .bi-ctrl-btn.cam-end-answer-btn[hidden],
 #basicInterviewSection .bi-rec-badge[hidden] {
   display: none !important;
