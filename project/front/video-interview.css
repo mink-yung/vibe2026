@@ -109,3 +109,30 @@
 #videoInterviewSection .cam-analyzing-error { color: #ff8787 !important; font-size: 13px !important; margin-top: 10px !important; }
 #videoInterviewSection .cam-spinner { width: 40px; height: 40px; margin: 0 auto; border: 3px solid rgba(255,255,255,0.25); border-top-color: #fff; border-radius: 50%; animation: cam-spin 0.8s linear infinite; }
 @keyframes cam-spin { to { transform: rotate(360deg); } }
+
+.cam-live-transcript {
+  margin: 0 20px 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #212529;
+  min-height: 2.8em;
+  max-height: 4.5em;
+  overflow-y: auto;
+}
+#videoInterviewSection.vi-theme-light .cam-live-transcript {
+  background: #f1f3f5;
+  border: 1px solid #e9ecef;
+}
+.cam-live-transcript.cam-transcript-empty {
+  color: #868e96;
+  font-style: italic;
+}
+#basicInterviewSection .cam-live-transcript {
+  margin: 0 16px 8px;
+  background: #f1f3f5;
+  border: 1px solid #e9ecef;
+  color: #212529;
+}

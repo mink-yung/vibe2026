@@ -85,22 +85,31 @@ function buildNormalResultFromBasicApi(d) {
   const apiOverall = d.overallScore != null ? Number(d.overallScore) : null;
   const answerText = d.answerText || '';
   const seed = String(d.interviewId || 'basic');
+  const metrics = d.metrics || null;
 
-  const deliveryBuilt =
-    typeof buildMetricDisplayList === 'function'
-      ? buildMetricDisplayList(BASIC_DELIVERY_DEFS, apiOverall ?? 72, {
-          answerText: answerText,
-          seed: seed,
-        })
-      : { items: [], average: null };
+  let deliveryBuilt =
+    typeof metricItemsFromDeliveryApi === 'function' && metrics?.delivery
+      ? metricItemsFromDeliveryApi(metrics.delivery, BASIC_DELIVERY_DEFS)
+      : null;
+  let contentBuilt =
+    typeof metricItemsFromContentApi === 'function' && metrics?.content
+      ? metricItemsFromContentApi(metrics.content, BASIC_CONTENT_DEFS)
+      : null;
 
-  const contentBuilt =
-    typeof buildMetricDisplayList === 'function'
-      ? buildMetricDisplayList(BASIC_CONTENT_DEFS, apiOverall ?? 72, {
-          answerText: answerText,
-          seed: seed + '-content',
-        })
-      : { items: [], average: null };
+  if (!deliveryBuilt && typeof buildMetricDisplayList === 'function') {
+    deliveryBuilt = buildMetricDisplayList(BASIC_DELIVERY_DEFS, apiOverall ?? 72, {
+      answerText: answerText,
+      seed: seed,
+    });
+  }
+  if (!contentBuilt && typeof buildMetricDisplayList === 'function') {
+    contentBuilt = buildMetricDisplayList(BASIC_CONTENT_DEFS, apiOverall ?? 72, {
+      answerText: answerText,
+      seed: seed + '-content',
+    });
+  }
+  if (!deliveryBuilt) deliveryBuilt = { items: [], average: null };
+  if (!contentBuilt) contentBuilt = { items: [], average: null };
 
   const allScores = deliveryBuilt.items
     .concat(contentBuilt.items)
@@ -114,18 +123,19 @@ function buildNormalResultFromBasicApi(d) {
   const tag = score != null ? getScoreMent(score) : '';
   const tagClass = score != null ? getTagClass(score) : '';
 
+  const fd = d.feedbackDetail || {};
   const questions = [];
   if (Array.isArray(d.questionRecords) && d.questionRecords.length) {
     d.questionRecords.forEach(function (r, i) {
       questions.push({
         title: 'Q' + (i + 1) + '. ' + (r.question || '\uc9c8\ubb38'),
-        feedback: r.answer || r.feedback || d.feedback || '',
+        feedback: r.answer || r.feedback || '',
       });
     });
   } else {
     questions.push({
       title: d.questionText || '\uc9c8\ubb38',
-      feedback: d.feedback || d.summary || '',
+      feedback: d.feedback || d.summary || fd.overall || '',
     });
   }
 

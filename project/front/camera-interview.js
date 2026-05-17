@@ -1,11 +1,24 @@
-/** 기본/실전 면접 카메라 UI (영상 파일 업로드·AI 영상 분석 없음) */
+/** 기본/실전 면접 카메라 UI + 음성 인식(STT) */
 let activeCameraStream = null;
 let activeCameraConfig = null;
 
-/** 페이지(기본/실전)별 상태 — 전역 공유 시 다른 섹션 init이 상태를 리셋할 수 있음 */
 const cameraInterviewStates = new WeakMap();
 
+const SpeechRecognitionCtor =
+  typeof window !== 'undefined'
+    ? window.SpeechRecognition || window.webkitSpeechRecognition
+    : null;
+
 const END_ANSWER_ENABLE_DELAY_MS = 400;
+const MAX_SNAPSHOT_IMAGES = 6;
+
+const PLACEHOLDER_ANSWER_MARKERS = [
+  'STT는 추후',
+  '음성 인식 미연동',
+  '기본 면접 답변',
+  '실전 면접 답변',
+  '추후 연동 예정',
+];
 
 function getCameraInterviewState(cfg) {
   if (!cfg) {
@@ -24,21 +37,41 @@ function getCameraInterviewState(cfg) {
       endActionsEnabled: false,
       currentQuestionIndex: 0,
       answers: [],
+      currentTranscript: '',
+      recognitionFinalBuffer: '',
+      snapshotImages: [],
+      volumeSamples: [],
+      recognition: null,
+      isListening: false,
+      audioContext: null,
+      volumeIntervalId: null,
     });
   }
   return cameraInterviewStates.get(cfg);
 }
 
+function isPlaceholderAnswer(text) {
+  const t = (text || '').trim();
+  if (!t) return true;
+  return PLACEHOLDER_ANSWER_MARKERS.some(function (m) {
+    return t.includes(m);
+  });
+}
+
 function stopActiveCameraInterviewStream() {
+  const cfg = activeCameraConfig;
+  if (cfg) {
+    stopCameraRecognition(cfg, { keepResults: true });
+    stopVolumeMonitor(cfg);
+  }
   if (activeCameraStream) {
-    activeCameraStream.getTracks().forEach(t => {
+    activeCameraStream.getTracks().forEach(function (t) {
       try {
         t.stop();
       } catch (_) {}
     });
     activeCameraStream = null;
   }
-  const cfg = activeCameraConfig;
   if (cfg?.videoEl) {
     cfg.videoEl.srcObject = null;
   }
@@ -49,42 +82,50 @@ function formatInterviewTimer(ms) {
   const sec = Math.floor(ms / 1000);
   const m = Math.floor(sec / 60);
   const s = sec % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
 }
 
 function setCamError(cfg, message) {
-  if (!cfg.errorEl) return;
+  if (!cfg?.errorEl) return;
   if (message) {
     cfg.errorEl.textContent = message;
     cfg.errorEl.hidden = false;
+    console.error('[camera-interview]', message);
   } else {
     cfg.errorEl.textContent = '';
     cfg.errorEl.hidden = true;
   }
 }
 
+function updateLiveTranscript(cfg) {
+  const state = getCameraInterviewState(cfg);
+  const el = cfg.transcriptEl;
+  if (!el) return;
+  const text = (state.currentTranscript || '').trim();
+  el.textContent = text || '말씀하시면 여기에 답변이 표시됩니다.';
+  el.classList.toggle('cam-transcript-empty', !text);
+}
+
 function updateCameraInterviewUi(cfg) {
   const state = getCameraInterviewState(cfg);
-  const { isStarted, isRecording, isSubmitting, endActionsEnabled } = state;
-  const showEndAnswer = isRecording && !isSubmitting && endActionsEnabled;
+  const showEndAnswer = state.isRecording && !state.isSubmitting && state.endActionsEnabled;
 
   if (cfg.startBtn) {
-    const hideStart = isStarted || isSubmitting;
+    const hideStart = state.isStarted || state.isSubmitting;
     cfg.startBtn.hidden = hideStart;
     cfg.startBtn.style.display = hideStart ? 'none' : '';
-    cfg.startBtn.disabled = isSubmitting || (cfg.errorEl && !cfg.errorEl.hidden);
+    cfg.startBtn.disabled = state.isSubmitting || (cfg.errorEl && !cfg.errorEl.hidden);
   }
-  const endBtns = [cfg.endAnswerBtn, cfg.endAnswerBtnTop].filter(Boolean);
-  endBtns.forEach(btn => {
+  [cfg.endAnswerBtn, cfg.endAnswerBtnTop].filter(Boolean).forEach(function (btn) {
     btn.hidden = !showEndAnswer;
-    btn.disabled = isSubmitting || !endActionsEnabled;
+    btn.disabled = state.isSubmitting || !state.endActionsEnabled;
     btn.style.pointerEvents = showEndAnswer ? '' : 'none';
   });
   if (cfg.recBadge) {
-    cfg.recBadge.hidden = !isRecording || isSubmitting;
+    cfg.recBadge.hidden = !state.isRecording || state.isSubmitting;
   }
   if (cfg.userWrap) {
-    cfg.userWrap.classList.toggle('cam-recording', isRecording && !isSubmitting);
+    cfg.userWrap.classList.toggle('cam-recording', state.isRecording && !state.isSubmitting);
   }
 }
 
@@ -94,25 +135,209 @@ function getQuestionItem(cfg, idx) {
   return { interviewer: 1, question: raw || '' };
 }
 
-function collectCameraAnswer(cfg, questionItem) {
-  const q = typeof questionItem === 'object' ? questionItem.question : questionItem;
-  let answer = '';
-  if (typeof cfg.getTranscript === 'function') {
-    answer = (cfg.getTranscript() || '').trim();
-  } else if (cfg.transcriptEl) {
-    answer = (cfg.transcriptEl.textContent || '').trim();
-  }
-  if (!answer) {
-    answer =
-      cfg.placeholderAnswer ||
-      '면접 답변(음성 인식 미연동 — 추후 STT·카메라 AI 분석 연동 예정)';
-  }
-  if (typeof cfg.resetTranscript === 'function') cfg.resetTranscript();
-  return {
-    question: q,
-    answer: answer,
-    interviewer: questionItem && questionItem.interviewer,
+function createCameraRecognition(cfg) {
+  if (!SpeechRecognitionCtor) return null;
+  const state = getCameraInterviewState(cfg);
+  const r = new SpeechRecognitionCtor();
+  r.continuous = true;
+  r.interimResults = true;
+  r.lang = cfg.speechLang || 'ko-KR';
+
+  r.onresult = function (event) {
+    let interim = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const piece = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        state.recognitionFinalBuffer += piece;
+      } else {
+        interim += piece;
+      }
+    }
+    state.currentTranscript = (state.recognitionFinalBuffer + interim).trim();
+    updateLiveTranscript(cfg);
   };
+
+  r.onerror = function (event) {
+    state.isListening = false;
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      setCamError(cfg, '마이크 권한이 거부되었습니다. 브라우저 설정에서 마이크를 허용해 주세요.');
+    } else if (event.error === 'no-speech') {
+      setCamError(cfg, '음성이 감지되지 않았습니다. 다시 말씀해 주세요.');
+    } else if (event.error !== 'aborted') {
+      setCamError(cfg, '음성 인식 오류: ' + event.error);
+    }
+    console.error('[camera-interview] recognition error', event.error);
+    updateCameraInterviewUi(cfg);
+  };
+
+  r.onend = function () {
+    if (state.isListening && state.recognition === r) {
+      try {
+        r.start();
+        console.log('[camera-interview] recognition restarted');
+      } catch (_) {
+        state.isListening = false;
+        updateCameraInterviewUi(cfg);
+      }
+    }
+  };
+
+  return r;
+}
+
+function startCameraRecognition(cfg) {
+  const state = getCameraInterviewState(cfg);
+  if (!SpeechRecognitionCtor) {
+    setCamError(cfg, '이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 또는 Edge를 사용해 주세요.');
+    return false;
+  }
+  setCamError(cfg, null);
+  state.recognitionFinalBuffer = '';
+  state.currentTranscript = '';
+  state.recognition = createCameraRecognition(cfg);
+  if (!state.recognition) return false;
+  try {
+    state.recognition.start();
+    state.isListening = true;
+    console.log('[camera-interview] recognition started');
+    updateLiveTranscript(cfg);
+    return true;
+  } catch (e) {
+    console.error('[camera-interview] recognition start failed', e);
+    setCamError(cfg, '음성 인식을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+    return false;
+  }
+}
+
+function stopCameraRecognition(cfg, options) {
+  const opts = options || {};
+  const state = getCameraInterviewState(cfg);
+  state.isListening = false;
+  const active = state.recognition;
+  state.recognition = null;
+  if (!active) return;
+  if (!opts.keepResults) {
+    try {
+      if (typeof active.abort === 'function') active.abort();
+    } catch (_) {}
+  }
+  try {
+    active.stop();
+  } catch (_) {}
+  if (!opts.keepResults) {
+    try {
+      active.onresult = null;
+      active.onerror = null;
+      active.onend = null;
+    } catch (_) {}
+  }
+}
+
+function finalizeCameraTranscript(cfg) {
+  return new Promise(function (resolve) {
+    const state = getCameraInterviewState(cfg);
+    if (!state.isListening && !state.recognition) {
+      const text = (state.currentTranscript || state.recognitionFinalBuffer || '').trim();
+      console.log('[camera-interview] transcript (idle)', text.length, 'chars');
+      resolve(text);
+      return;
+    }
+    state.isListening = false;
+    const active = state.recognition;
+    state.recognition = null;
+    if (!active) {
+      resolve((state.currentTranscript || state.recognitionFinalBuffer || '').trim());
+      return;
+    }
+    let settled = false;
+    const finish = function () {
+      if (settled) return;
+      settled = true;
+      const text = (state.currentTranscript || state.recognitionFinalBuffer || '').trim();
+      console.log('[camera-interview] transcript finalized', text.length, 'chars');
+      resolve(text);
+    };
+    try {
+      active.onend = function () {
+        finish();
+      };
+      active.stop();
+    } catch (_) {
+      finish();
+    }
+    setTimeout(finish, 600);
+  });
+}
+
+function resetQuestionTranscript(cfg) {
+  const state = getCameraInterviewState(cfg);
+  state.recognitionFinalBuffer = '';
+  state.currentTranscript = '';
+  updateLiveTranscript(cfg);
+  startCameraRecognition(cfg);
+}
+
+function startVolumeMonitor(stream, cfg) {
+  const state = getCameraInterviewState(cfg);
+  stopVolumeMonitor(cfg);
+  if (!stream) return;
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    state.audioContext = audioContext;
+    state.volumeIntervalId = setInterval(function () {
+      try {
+        analyser.getByteFrequencyData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) sum += data[i];
+        const avg = sum / data.length / 255;
+        state.volumeSamples.push(avg);
+        if (state.volumeSamples.length > 120) state.volumeSamples.shift();
+      } catch (_) {}
+    }, 200);
+    console.log('[camera-interview] volume monitor started');
+  } catch (e) {
+    console.error('[camera-interview] volume monitor failed', e);
+  }
+}
+
+function stopVolumeMonitor(cfg) {
+  const state = getCameraInterviewState(cfg);
+  if (state.volumeIntervalId) {
+    clearInterval(state.volumeIntervalId);
+    state.volumeIntervalId = null;
+  }
+  if (state.audioContext) {
+    try {
+      state.audioContext.close();
+    } catch (_) {}
+    state.audioContext = null;
+  }
+}
+
+function captureVideoFrame(cfg) {
+  const state = getCameraInterviewState(cfg);
+  const video = cfg.videoEl;
+  if (!video || !video.videoWidth) return;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.min(640, video.videoWidth);
+    canvas.height = Math.round((canvas.width / video.videoWidth) * video.videoHeight);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+    state.snapshotImages.push(dataUrl);
+    if (state.snapshotImages.length > MAX_SNAPSHOT_IMAGES) {
+      state.snapshotImages = state.snapshotImages.slice(-MAX_SNAPSHOT_IMAGES);
+    }
+    console.log('[camera-interview] frame captured, total', state.snapshotImages.length);
+  } catch (e) {
+    console.error('[camera-interview] frame capture failed', e);
+  }
 }
 
 function updateQuestionDisplay(cfg) {
@@ -163,7 +388,7 @@ function scheduleEnableEndAnswerActions(cfg) {
   }
   state.endActionsEnabled = false;
   updateCameraInterviewUi(cfg);
-  cfg.endEnableTimerId = setTimeout(() => {
+  cfg.endEnableTimerId = setTimeout(function () {
     cfg.endEnableTimerId = null;
     if (!state.isRecording || state.isSubmitting) return;
     state.endActionsEnabled = true;
@@ -196,29 +421,65 @@ function showCameraAnalyzingError(cfg, message) {
   if (cfg.analyzingOverlay) cfg.analyzingOverlay.hidden = false;
 }
 
+function getMediaErrorMessage(err) {
+  if (!err) return '카메라를 시작할 수 없습니다.';
+  if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+    return '카메라·마이크 권한이 거부되었습니다. 브라우저 설정에서 허용해 주세요.';
+  }
+  if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+    return '카메라 또는 마이크 장치를 찾을 수 없습니다. 장치 연결을 확인해 주세요.';
+  }
+  if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+    return '카메라 또는 마이크가 다른 프로그램에서 사용 중일 수 있습니다.';
+  }
+  if (err.name === 'OverconstrainedError') {
+    return '요청한 카메라 설정을 사용할 수 없습니다.';
+  }
+  if (err.name === 'SecurityError') {
+    return '보안 설정 때문에 카메라에 접근할 수 없습니다. HTTPS 또는 localhost에서 시도해 주세요.';
+  }
+  return '카메라를 시작할 수 없습니다. Chrome 또는 Edge 사용을 권장합니다.';
+}
+
 async function requestCameraStream(cfg) {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    setCamError(cfg, '이 브라우저는 카메라를 지원하지 않습니다. Chrome 사용을 권장합니다.');
+    setCamError(cfg, '이 브라우저는 카메라를 지원하지 않습니다. Chrome 또는 Edge를 사용해 주세요.');
     return null;
   }
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    });
     activeCameraStream = stream;
     activeCameraConfig = cfg;
     if (cfg.videoEl) {
       cfg.videoEl.srcObject = stream;
       cfg.videoEl.hidden = false;
+      cfg.videoEl.muted = true;
+      try {
+        await cfg.videoEl.play();
+        console.log('[camera-interview] video playing');
+      } catch (playErr) {
+        console.error('[camera-interview] video.play failed', playErr);
+        setCamError(cfg, '카메라 영상을 표시할 수 없습니다. 페이지를 새로고침해 주세요.');
+      }
     }
     if (cfg.avatarEl) cfg.avatarEl.style.display = 'none';
     setCamError(cfg, null);
+    startVolumeMonitor(stream, cfg);
+    console.log('[camera-interview] getUserMedia success', {
+      videoTracks: stream.getVideoTracks().length,
+      audioTracks: stream.getAudioTracks().length,
+    });
     return stream;
   } catch (e) {
-    console.error(e);
-    if (e && (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError')) {
-      setCamError(cfg, '카메라·마이크 권한이 거부되었습니다. 브라우저 설정에서 허용해 주세요.');
-    } else {
-      setCamError(cfg, '카메라를 시작할 수 없습니다. 다른 프로그램에서 사용 중인지 확인해 주세요.');
-    }
+    console.error('[camera-interview] getUserMedia failed', e);
+    setCamError(cfg, getMediaErrorMessage(e));
     return null;
   }
 }
@@ -230,6 +491,10 @@ async function onCameraInterviewStart(cfg, event) {
     event.stopPropagation();
   }
   if (state.isSubmitting) return;
+  if (!SpeechRecognitionCtor) {
+    setCamError(cfg, '이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 또는 Edge를 사용해 주세요.');
+    return;
+  }
   if (typeof getStoredAuthToken === 'function' && !getStoredAuthToken()) {
     setCamError(cfg, '로그인이 필요합니다.');
     if (typeof openLoginModal === 'function') openLoginModal();
@@ -242,7 +507,10 @@ async function onCameraInterviewStart(cfg, event) {
   if (typeof openDeviceCheck === 'function') {
     const deviceOk = await openDeviceCheck({
       mode: 'video',
-      title: cfg.mode === 'real' ? '실전 면접 — 카메라·마이크 확인' : '기본 면접 — 카메라·마이크 확인',
+      title:
+        cfg.mode === 'real'
+          ? '실전 면접 — 카메라·마이크 확인'
+          : '기본 면접 — 카메라·마이크 확인',
     });
     if (!deviceOk) return;
   }
@@ -253,11 +521,15 @@ async function onCameraInterviewStart(cfg, event) {
   state.isStarted = true;
   state.isRecording = true;
   state.endActionsEnabled = false;
+  state.currentQuestionIndex = 0;
+  state.answers = [];
+  state.snapshotImages = [];
+  state.volumeSamples = [];
   cfg.interviewStartedAt = Date.now();
 
   if (cfg.timerEl) {
     if (cfg.timerIntervalId) clearInterval(cfg.timerIntervalId);
-    cfg.timerIntervalId = setInterval(() => {
+    cfg.timerIntervalId = setInterval(function () {
       if (cfg.timerEl && cfg.interviewStartedAt) {
         cfg.timerEl.textContent = formatInterviewTimer(Date.now() - cfg.interviewStartedAt);
       }
@@ -266,8 +538,14 @@ async function onCameraInterviewStart(cfg, event) {
   }
 
   if (cfg.multiQuestion) {
-    state.currentQuestionIndex = 0;
     updateQuestionDisplay(cfg);
+  }
+
+  if (!startCameraRecognition(cfg)) {
+    stopActiveCameraInterviewStream();
+    state.isStarted = false;
+    state.isRecording = false;
+    return;
   }
 
   updateCameraInterviewUi(cfg);
@@ -290,20 +568,48 @@ async function onCameraInterviewEndAnswer(cfg, event) {
     cfg.endEnableTimerId = null;
   }
 
+  state.endActionsEnabled = false;
+  updateCameraInterviewUi(cfg);
+
+  const answerText = await finalizeCameraTranscript(cfg);
+  if (!answerText || isPlaceholderAnswer(answerText)) {
+    setCamError(cfg, '답변이 인식되지 않았습니다. 마이크에 대고 다시 답변해 주세요.');
+    resetQuestionTranscript(cfg);
+    scheduleEnableEndAnswerActions(cfg);
+    return;
+  }
+
+  captureVideoFrame(cfg);
+  setCamError(cfg, null);
+
   if (cfg.multiQuestion && cfg.questions?.length) {
     const item = getQuestionItem(cfg, state.currentQuestionIndex);
-    state.answers.push(collectCameraAnswer(cfg, item));
+    state.answers.push({
+      question: item.question,
+      answer: answerText,
+      interviewer: item.interviewer,
+    });
+    console.log('[camera-interview] answer saved Q' + (state.currentQuestionIndex + 1), answerText.slice(0, 80));
+
     if (state.currentQuestionIndex < cfg.questions.length - 1) {
       state.currentQuestionIndex += 1;
       updateQuestionDisplay(cfg);
+      resetQuestionTranscript(cfg);
       scheduleEnableEndAnswerActions(cfg);
       return;
     }
+  } else {
+    const item = getQuestionItem(cfg, 0);
+    state.answers.push({
+      question: item.question,
+      answer: answerText,
+      interviewer: item.interviewer,
+    });
   }
 
   state.isSubmitting = true;
   state.isRecording = false;
-  state.endActionsEnabled = false;
+  stopCameraRecognition(cfg, { keepResults: true });
   updateCameraInterviewUi(cfg);
   showCameraAnalyzing(cfg, cfg.analyzingDefaultText);
 
@@ -311,6 +617,9 @@ async function onCameraInterviewEndAnswer(cfg, event) {
   const sessionData = {
     elapsedMs: elapsedMs,
     questionCount: cfg.questions?.length || state.answers.length || 1,
+    snapshotImages: state.snapshotImages.slice(),
+    volumeSamples: state.volumeSamples.slice(),
+    durationSeconds: elapsedMs ? Math.max(1, Math.round(elapsedMs / 1000)) : null,
   };
   if (state.answers.length) {
     sessionData.answers = state.answers;
@@ -322,10 +631,17 @@ async function onCameraInterviewEndAnswer(cfg, event) {
       };
     });
   }
+
+  console.log('[camera-interview] submitting payload', {
+    answerCount: state.answers.length,
+    imageCount: sessionData.snapshotImages.length,
+    durationSeconds: sessionData.durationSeconds,
+  });
+
   const result = await cfg.submitFn({
     silent: true,
     sessionData: sessionData,
-    onEnd: () => {
+    onEnd: function () {
       state.isSubmitting = false;
       updateCameraInterviewUi(cfg);
     },
@@ -339,6 +655,7 @@ async function onCameraInterviewEndAnswer(cfg, event) {
 
   state.isSubmitting = false;
   state.isRecording = true;
+  startCameraRecognition(cfg);
   scheduleEnableEndAnswerActions(cfg);
   showCameraAnalyzingError(cfg, (result && result.message) || '저장에 실패했습니다. 다시 시도해 주세요.');
 }
@@ -356,8 +673,12 @@ function initCameraInterviewPage(cfg) {
   state.endActionsEnabled = false;
   state.currentQuestionIndex = 0;
   state.answers = [];
+  state.snapshotImages = [];
+  state.volumeSamples = [];
 
   hideCameraAnalyzing(cfg);
+  updateLiveTranscript(cfg);
+
   if (cfg.multiQuestion) {
     if (cfg.captionWrapEl) cfg.captionWrapEl.hidden = true;
     if (cfg.interviewerPanels) {
@@ -375,16 +696,20 @@ function initCameraInterviewPage(cfg) {
 
   if (cfg.startBtn && cfg.startBtn.dataset.camClickBound !== '1') {
     cfg.startBtn.dataset.camClickBound = '1';
-    cfg.startBtn.addEventListener('click', e => onCameraInterviewStart(cfg, e));
+    cfg.startBtn.addEventListener('click', function (e) {
+      onCameraInterviewStart(cfg, e);
+    });
   }
-  [cfg.endAnswerBtn, cfg.endAnswerBtnTop].filter(Boolean).forEach(btn => {
+  [cfg.endAnswerBtn, cfg.endAnswerBtnTop].filter(Boolean).forEach(function (btn) {
     if (btn.dataset.camClickBound === '1') return;
     btn.dataset.camClickBound = '1';
-    btn.addEventListener('click', e => onCameraInterviewEndAnswer(cfg, e));
+    btn.addEventListener('click', function (e) {
+      onCameraInterviewEndAnswer(cfg, e);
+    });
   });
   if (cfg.exitBtn && cfg.exitBtn.dataset.camClickBound !== '1') {
     cfg.exitBtn.dataset.camClickBound = '1';
-    cfg.exitBtn.addEventListener('click', e => {
+    cfg.exitBtn.addEventListener('click', function (e) {
       e.preventDefault();
       stopActiveCameraInterviewStream();
       location.href = 'mock-interview.html';
@@ -392,7 +717,7 @@ function initCameraInterviewPage(cfg) {
   }
   if (cfg.analyzingRetryBtn && cfg.analyzingRetryBtn.dataset.camClickBound !== '1') {
     cfg.analyzingRetryBtn.dataset.camClickBound = '1';
-    cfg.analyzingRetryBtn.addEventListener('click', () => {
+    cfg.analyzingRetryBtn.addEventListener('click', function () {
       hideCameraAnalyzing(cfg);
       onCameraInterviewEndAnswer(cfg);
     });
@@ -418,12 +743,14 @@ function buildVideoInterviewCameraConfig() {
 
   const captionWrap = section.querySelector('.vi-interviewer-caption-overlay');
 
-  const cfg = {
+  return {
     sectionEl: section,
     mode: 'basic',
+    speechLang: 'ko-KR',
     videoEl: document.getElementById('vi-user-video'),
     avatarEl: section.querySelector('.vi-video-wrap.user .vi-avatar'),
     userWrap: section.querySelector('.vi-video-wrap.user'),
+    transcriptEl: document.getElementById('vi-live-transcript'),
     startBtn: document.getElementById('vi-cam-start'),
     endAnswerBtn: document.getElementById('vi-cam-end-answer'),
     endAnswerBtnTop: null,
@@ -435,8 +762,6 @@ function buildVideoInterviewCameraConfig() {
     captionWrapEl: captionWrap,
     questions: questions,
     multiQuestion: true,
-    placeholderAnswer:
-      '기본 면접 답변(텍스트·STT는 추후 연동, 표정·자세·시선은 추후 카메라 AI 분석 API로 대체 예정)',
     recBadge: document.getElementById('vi-rec-badge'),
     errorEl: document.getElementById('vi-cam-error'),
     analyzingOverlay: document.getElementById('vi-analyzing-overlay'),
@@ -445,10 +770,10 @@ function buildVideoInterviewCameraConfig() {
     analyzingRetryBtn: document.getElementById('vi-analyzing-retry'),
     analyzingDefaultText: 'AI가 답변을 분석 중입니다...',
     timerEl: document.getElementById('vi-timer'),
-    submitFn: hooks => finishBasicVideoInterviewSubmit(hooks),
+    submitFn: function (hooks) {
+      return finishBasicVideoInterviewSubmit(hooks);
+    },
   };
-  if (captionWrap) captionWrap.hidden = true;
-  return cfg;
 }
 
 function buildBasicInterviewCameraConfig() {
@@ -470,9 +795,11 @@ function buildBasicInterviewCameraConfig() {
   return {
     sectionEl: section,
     mode: 'real',
+    speechLang: 'ko-KR',
     videoEl: document.getElementById('bi-user-video'),
     avatarEl: section.querySelector('.bi-video-main .bi-avatar'),
     userWrap: section.querySelector('.bi-video-main'),
+    transcriptEl: document.getElementById('bi-live-transcript'),
     startBtn: document.getElementById('bi-cam-start'),
     endAnswerBtn: document.getElementById('bi-cam-end-answer'),
     endAnswerBtnTop: null,
@@ -491,16 +818,19 @@ function buildBasicInterviewCameraConfig() {
     analyzingRetryBtn: document.getElementById('bi-analyzing-retry'),
     analyzingDefaultText: '3명의 AI 면접관이 답변을 분석 중입니다...',
     timerEl: document.getElementById('bi-timer'),
-    placeholderAnswer:
-      '실전 면접 답변(텍스트·STT는 추후 연동, 표정·자세·시선은 추후 카메라 AI 분석 API로 대체 예정)',
-    submitFn: hooks => finishRealInterviewSubmit(hooks),
+    submitFn: function (hooks) {
+      return finishRealInterviewSubmit(hooks);
+    },
   };
 }
 
 (function initCameraInterviewPages() {
   function run() {
     const vi = buildVideoInterviewCameraConfig();
-    if (vi) initCameraInterviewPage(vi);
+    if (vi) {
+      if (vi.captionWrapEl) vi.captionWrapEl.hidden = true;
+      initCameraInterviewPage(vi);
+    }
     const bi = buildBasicInterviewCameraConfig();
     if (bi) initCameraInterviewPage(bi);
   }

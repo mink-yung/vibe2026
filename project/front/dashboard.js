@@ -1054,18 +1054,25 @@ function normalizeCameraSubmitHooks(hooks) {
   return {};
 }
 
-async function finishBasicVideoInterviewSubmit(hooks) {
-  const ui = normalizeCameraSubmitHooks(hooks);
-  if (typeof getStoredAuthToken !== 'function' || !getStoredAuthToken()) {
-    if (!ui.silent) {
-      alert('로그인이 필요합니다.');
-      location.href = 'dashboard.html#login';
-    }
-    return { ok: false, message: 'LOGIN_REQUIRED' };
-  }
-  const sd = ui.sessionData || {};
-  let questionText = '기본 면접';
-  let answerText = '기본 면접 화면에서 제출한 연습 답변(텍스트·STT는 추후 연동 예정)';
+function isInvalidCameraAnswerText(text) {
+  const t = (text || '').trim();
+  if (!t) return true;
+  const markers = [
+    'STT는 추후',
+    '음성 인식 미연동',
+    '기본 면접 답변',
+    '실전 면접 답변',
+    '추후 연동 예정',
+    '기본 면접 화면에서 제출',
+  ];
+  return markers.some(function (m) {
+    return t.includes(m);
+  });
+}
+
+function buildCameraInterviewPayload(sd, fallbackQuestion) {
+  let questionText = fallbackQuestion || '면접';
+  let answerText = '';
   if (Array.isArray(sd.questionRecords) && sd.questionRecords.length) {
     questionText = sd.questionRecords
       .map(function (r, i) {
@@ -1077,15 +1084,41 @@ async function finishBasicVideoInterviewSubmit(hooks) {
         return '질문' + (i + 1) + ' 답변: ' + (r.answer || '');
       })
       .join('\n\n');
-  } else {
-    const labelEl = document.getElementById('vi-q-label');
-    const textEl = document.getElementById('vi-q-text');
-    const qLabel = (labelEl?.textContent || '').trim();
-    const qText = (textEl?.textContent || '').trim();
-    questionText = [qLabel, qText].filter(Boolean).join(' ').trim() || questionText;
   }
+  return {
+    questionText: questionText,
+    answerText: answerText.trim(),
+    transcript: answerText.trim(),
+    images: Array.isArray(sd.snapshotImages) ? sd.snapshotImages : [],
+    durationSeconds: sd.durationSeconds || (sd.elapsedMs ? Math.max(1, Math.round(sd.elapsedMs / 1000)) : null),
+    volumeSamples: Array.isArray(sd.volumeSamples) ? sd.volumeSamples : [],
+  };
+}
+
+async function finishBasicVideoInterviewSubmit(hooks) {
+  const ui = normalizeCameraSubmitHooks(hooks);
+  if (typeof getStoredAuthToken !== 'function' || !getStoredAuthToken()) {
+    if (!ui.silent) {
+      alert('로그인이 필요합니다.');
+      location.href = 'dashboard.html#login';
+    }
+    return { ok: false, message: 'LOGIN_REQUIRED' };
+  }
+  const sd = ui.sessionData || {};
+  const payload = buildCameraInterviewPayload(sd, '기본 면접');
+  if (!payload.answerText || isInvalidCameraAnswerText(payload.answerText)) {
+    const msg = '답변이 인식되지 않았습니다. 다시 답변해 주세요.';
+    ui.onEnd?.();
+    if (!ui.silent) alert(msg);
+    return { ok: false, message: msg };
+  }
+  console.log('[finishBasicVideoInterviewSubmit] payload', {
+    answerLen: payload.answerText.length,
+    images: payload.images.length,
+    durationSeconds: payload.durationSeconds,
+  });
   try {
-    const res = await apiPostInterviewsBasic({ questionText, answerText });
+    const res = await apiPostInterviewsBasic(payload);
     const data = await res.json().catch(() => ({}));
     if (res.status === 401) {
       if (typeof clearStoredAuth === 'function') clearStoredAuth();
@@ -1099,12 +1132,16 @@ async function finishBasicVideoInterviewSubmit(hooks) {
       if (!ui.silent) alert(msg);
       return { ok: false, message: msg };
     }
-    const payload = Object.assign({}, data, {
+    console.log('[finishBasicVideoInterviewSubmit] response', {
+      overallScore: data.overallScore,
+      scores: data.scores,
+    });
+    const store = Object.assign({}, data, {
       questionRecords: sd.questionRecords || null,
       elapsedMs: sd.elapsedMs || null,
       questionCount: sd.questionCount || (sd.questionRecords ? sd.questionRecords.length : 5),
     });
-    sessionStorage.setItem('normalInterviewLastResult', JSON.stringify(payload));
+    sessionStorage.setItem('normalInterviewLastResult', JSON.stringify(store));
     location.href = 'normal-result.html';
     return { ok: true };
   } catch (e) {
@@ -1130,27 +1167,34 @@ async function finishRealInterviewSubmit(hooks) {
     return { ok: false, message: 'LOGIN_REQUIRED' };
   }
   const sd = ui.sessionData || {};
-  let questionText = '실전 면접';
-  let answerText =
-    '실전 면접 화면에서 제출한 연습 답변(텍스트·STT는 추후 연동, 표정·자세·시선은 추후 카메라 AI 분석 API로 대체 예정)';
+  let payload = buildCameraInterviewPayload(sd, '실전 면접');
   if (Array.isArray(sd.questionRecords) && sd.questionRecords.length) {
-    questionText = sd.questionRecords
+    payload.questionText = sd.questionRecords
       .map(function (r, i) {
         const iv = r.interviewer || 1;
         return 'AI 면접관 ' + iv + ' 질문' + (i + 1) + ': ' + (r.question || '');
       })
       .join('\n');
-    answerText = sd.questionRecords
+    payload.answerText = sd.questionRecords
       .map(function (r, i) {
         return '질문' + (i + 1) + ' 답변: ' + (r.answer || '');
       })
       .join('\n\n');
-  } else {
-    const infoEl = document.getElementById('bi-q-info');
-    questionText = (infoEl?.textContent || '').trim() || questionText;
+    payload.transcript = payload.answerText;
   }
+  if (!payload.answerText || isInvalidCameraAnswerText(payload.answerText)) {
+    const msg = '답변이 인식되지 않았습니다. 다시 답변해 주세요.';
+    ui.onEnd?.();
+    if (!ui.silent) alert(msg);
+    return { ok: false, message: msg };
+  }
+  console.log('[finishRealInterviewSubmit] payload', {
+    answerLen: payload.answerText.length,
+    images: payload.images.length,
+    durationSeconds: payload.durationSeconds,
+  });
   try {
-    const res = await apiPostInterviewsReal({ questionText, answerText });
+    const res = await apiPostInterviewsReal(payload);
     const data = await res.json().catch(() => ({}));
     if (res.status === 401) {
       if (typeof clearStoredAuth === 'function') clearStoredAuth();
@@ -1164,12 +1208,16 @@ async function finishRealInterviewSubmit(hooks) {
       if (!ui.silent) alert(msg);
       return { ok: false, message: msg };
     }
-    const payload = Object.assign({}, data, {
+    console.log('[finishRealInterviewSubmit] response', {
+      overallScore: data.overallScore,
+      scores: data.scores,
+    });
+    const store = Object.assign({}, data, {
       questionRecords: sd.questionRecords || null,
       elapsedMs: sd.elapsedMs || null,
       questionCount: sd.questionCount || (sd.questionRecords ? sd.questionRecords.length : 12),
     });
-    sessionStorage.setItem('basicInterviewLastResult', JSON.stringify(payload));
+    sessionStorage.setItem('basicInterviewLastResult', JSON.stringify(store));
     location.href = 'basic-result.html';
     return { ok: true };
   } catch (e) {
