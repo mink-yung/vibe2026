@@ -540,16 +540,9 @@ function pickLoginErrorMessage(data) {
  * @returns {Promise<{ ok: boolean, message?: string }>}
  */
 async function requestLoginApi(email, password) {
-  const loginUrl = `${API_BASE}/api/auth/login`;
-  const response = await fetch(loginUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      email: email,
-      password: password,
-    }),
+  const response = await apiPostAuthLogin({
+    email: email,
+    password: password,
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {

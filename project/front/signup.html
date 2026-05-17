@@ -36,6 +36,7 @@
       <p class="auth-switch">이미 계정이 있으신가요? <a href="dashboard.html#login">로그인</a></p>
     </div>
   </div>
+  <script src="api.js"></script>
   <script>
     function getSignupErrorEl() {
       return document.getElementById('signup-error');
@@ -74,16 +75,10 @@
       var submitBtn = e.target.querySelector('button[type="submit"]');
       if (submitBtn) submitBtn.disabled = true;
       try {
-        var response = await fetch('https://squad-understanding-peaceful-power.trycloudflare.com/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: email,
-            password: password,
-            name: name,
-          }),
+        var response = await apiPostAuthRegister({
+          email: email,
+          password: password,
+          name: name,
         });
         var data = await response.json().catch(function () { return {}; });
         if (!response.ok) {

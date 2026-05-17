@@ -78,6 +78,14 @@ async function apiInterviewFetch(path, options = {}) {
   return fetch(url, { ...rest, body, headers });
 }
 
+async function apiPostAuthRegister(body) {
+  return apiAuthFetch('/api/auth/register', { method: 'POST', body: body ?? {} });
+}
+
+async function apiPostAuthLogin(body) {
+  return apiAuthFetch('/api/auth/login', { method: 'POST', body: body ?? {} });
+}
+
 async function apiGetAuthMe() {
   return apiAuthFetch('/api/auth/me', { method: 'GET' });
 }
