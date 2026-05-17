@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { pool } from "../config/db.js";
 import { authRequired } from "../middleware/authMiddleware.js";
+import crypto from "crypto";
+import { sendVerificationEmail } from "../services/mailService.js";
 
 const router = express.Router();
 
@@ -33,23 +35,42 @@ router.post("/register", async (req, res) => {
     }
 
     // 비밀번호 암호화
-    const hashedPassword = await bcrypt.hash(password, 10);
+const hashedPassword = await bcrypt.hash(password, 10);
 
-    // DB에 회원 저장
-    const [result] = await pool.execute(
-      "INSERT INTO users (email, password, name) VALUES (?, ?, ?)",
-      [email, hashedPassword, name]
-    );
+// 이메일 인증 토큰 생성
+const verificationToken = crypto.randomBytes(32).toString("hex");
+const tokenHash = crypto
+  .createHash("sha256")
+  .update(verificationToken)
+  .digest("hex");
 
-    return res.status(201).json({
-      success: true,
-      message: "회원가입 성공",
-      user: {
-        id: result.insertId,
-        email,
-        name
-      }
-    });
+const expires = new Date(Date.now() + 1000 * 60 * 30); // 30분
+
+// DB에 회원 저장
+const [result] = await pool.execute(
+  `INSERT INTO users (
+    email,
+    password,
+    name,
+    email_verified,
+    email_verification_token_hash,
+    email_verification_expires
+  ) VALUES (?, ?, ?, 0, ?, ?)`,
+  [email, hashedPassword, name, tokenHash, expires]
+);
+
+// 인증 메일 보내기
+await sendVerificationEmail(email, verificationToken);
+
+  return res.status(201).json({
+    success: true,
+    message: "회원가입이 완료되었습니다. 이메일 인증 후 로그인해주세요.",
+    user: {
+      id: result.insertId,
+      email,
+      name
+    }
+  });
   } catch (error) {
     console.error("회원가입 오류:", error);
 
@@ -87,6 +108,13 @@ router.post("/login", async (req, res) => {
     }
 
     const user = users[0];
+
+    if (!user.email_verified) {
+      return res.status(403).json({
+        success: false,
+        message: "이메일 인증 후 로그인해주세요."
+      });
+    }
 
     // 비밀번호 비교
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
@@ -127,6 +155,51 @@ router.post("/login", async (req, res) => {
       success: false,
       message: "서버 오류가 발생했습니다."
     });
+  }
+});
+
+// 이메일 인증 API
+// GET /api/auth/verify-email
+router.get("/verify-email", async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).send("인증 토큰이 없습니다.");
+    }
+
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const [users] = await pool.execute(
+      `SELECT id
+       FROM users
+       WHERE email_verification_token_hash = ?
+         AND email_verification_expires > NOW()`,
+      [tokenHash]
+    );
+
+    if (users.length === 0) {
+      return res.status(400).send("인증 링크가 만료되었거나 올바르지 않습니다.");
+    }
+
+    await pool.execute(
+      `UPDATE users
+       SET email_verified = 1,
+           email_verification_token_hash = NULL,
+           email_verification_expires = NULL
+       WHERE id = ?`,
+      [users[0].id]
+    );
+
+    return res.redirect(
+      `${process.env.FRONTEND_PUBLIC_URL}/login.html?verified=1`
+    );
+  } catch (error) {
+    console.error("이메일 인증 오류:", error);
+    return res.status(500).send("이메일 인증 중 서버 오류가 발생했습니다.");
   }
 });
 
