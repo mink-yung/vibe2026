@@ -1,5 +1,5 @@
 /** 백엔드 베이스 URL (로그인은 Bearer 없이 호출) */
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'https://squad-understanding-peaceful-power.trycloudflare.com/';
 
 const AUTH_TOKEN_KEY = 'token';
 const AUTH_USER_KEY = 'user';

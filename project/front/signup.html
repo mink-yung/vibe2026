@@ -74,7 +74,7 @@
       var submitBtn = e.target.querySelector('button[type="submit"]');
       if (submitBtn) submitBtn.disabled = true;
       try {
-        var response = await fetch('http://localhost:3000/api/auth/register', {
+        var response = await fetch('https://squad-understanding-peaceful-power.trycloudflare.com/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
