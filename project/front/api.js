@@ -1,5 +1,5 @@
 /** 백엔드 베이스 URL (로그인은 Bearer 없이 호출) */
-const API_BASE = 'https://squad-understanding-peaceful-power.trycloudflare.com/';
+const API_BASE = 'https://shapes-meaning-necessity-polls.trycloudflare.com';
 
 const AUTH_TOKEN_KEY = 'token';
 const AUTH_USER_KEY = 'user';
