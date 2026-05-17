@@ -4,7 +4,8 @@ import { authRequired } from "../middleware/authMiddleware.js";
 import {
   generateInterviewFeedback,
   generateCameraAnalysis,
-  generateCameraInterviewEvaluation
+  generateCameraInterviewEvaluation,
+  buildSessionAudioMetrics,
 } from "../services/aiService.js";
 import { appLog, appLogError } from "../utils/appLog.js";
 
@@ -33,24 +34,22 @@ async function saveCameraInterviewExtras({
   mode,
   questionText,
   answerText,
-  images,
+  cameraAnalysis: cameraAnalysisInput,
   durationSeconds,
   volumeSamples,
 }) {
-  let cameraAnalysis = null;
-  const safeImages = Array.isArray(images) ? images.slice(0, 3) : [];
+  const safeVolume = Array.isArray(volumeSamples)
+    ? volumeSamples.slice(-60).map((v) => Number(v) || 0)
+    : [];
 
-  if (safeImages.length > 0) {
-    cameraAnalysis = await generateCameraAnalysis({
-      mode,
-      images: safeImages,
+  let cameraAnalysis = null;
+  if (cameraAnalysisInput && typeof cameraAnalysisInput === "object" && !Array.isArray(cameraAnalysisInput)) {
+    cameraAnalysis = cameraAnalysisInput;
+  } else {
+    cameraAnalysis = buildSessionAudioMetrics({
       transcript: answerText,
       durationSeconds,
-      volumeSamples,
-    });
-    appLog("camera analysis done", {
-      interviewId,
-      hasCameraAnalysis: !!cameraAnalysis,
+      volumeSamples: safeVolume,
     });
   }
 
@@ -278,13 +277,20 @@ router.post("/quick/audio", async (req, res) => {
 // POST /api/interviews/basic
 router.post("/basic", async (req, res) => {
   try {
-    const { questionText, images, durationSeconds, volumeSamples } = req.body;
+    const { questionText, durationSeconds, volumeSamples, cameraAnalysis, interviewType } =
+      req.body;
     const userId = req.user.id;
     const finalAnswerText = normalizeAnswerText(req.body);
 
+    console.log("[camera save] user:", userId);
+    console.log("[camera save] question:", questionText?.slice?.(0, 80));
+    console.log("[camera save] answer length:", finalAnswerText.length);
+    console.log("[camera save] interviewType:", interviewType || "basic");
+    console.log("[camera save] cameraAnalysis exists:", !!cameraAnalysis);
+
     appLog("POST /basic", {
       answerLen: finalAnswerText.length,
-      hasImages: Array.isArray(images) && images.length > 0,
+      interviewType: interviewType || "camera",
     });
 
     if (!questionText || !String(questionText).trim()) {
@@ -294,7 +300,14 @@ router.post("/basic", async (req, res) => {
       });
     }
 
-    if (!finalAnswerText || isPlaceholderAnswer(finalAnswerText)) {
+    if (!finalAnswerText) {
+      return res.status(400).json({
+        success: false,
+        message: "답변 내용이 없어 저장할 수 없습니다.",
+      });
+    }
+
+    if (isPlaceholderAnswer(finalAnswerText)) {
       return res.status(400).json({
         success: false,
         message:
@@ -331,17 +344,19 @@ router.post("/basic", async (req, res) => {
       [interviewId, "friendly", aiResult.feedback, aiResult.nextQuestion]
     );
 
-    const { evaluation, metrics, cameraAnalysis } = await saveCameraInterviewExtras({
-      interviewId,
-      userId,
-      mode: "basic",
-      questionText,
-      answerText: finalAnswerText,
-      images,
-      durationSeconds,
-      volumeSamples,
-    });
+    const { evaluation, metrics, cameraAnalysis: savedCameraAnalysis } =
+      await saveCameraInterviewExtras({
+        interviewId,
+        userId,
+        mode: "basic",
+        questionText,
+        answerText: finalAnswerText,
+        cameraAnalysis,
+        durationSeconds,
+        volumeSamples,
+      });
 
+    console.log("[camera save] scores:", evaluation.scores);
     appLog("basic interview saved", { interviewId, overallScore: evaluation.overallScore });
 
     return res.status(201).json({
@@ -357,10 +372,11 @@ router.post("/basic", async (req, res) => {
       overallScore: evaluation.overallScore,
       scores: evaluation.scores,
       metrics,
-      cameraAnalysis,
+      cameraAnalysis: savedCameraAnalysis,
       feedbackDetail: evaluation.feedback,
     });
   } catch (error) {
+    console.error("[camera save] basic error:", error);
     appLogError("기본면접 저장 오류", { message: error.message });
 
     return res.status(500).json({
@@ -439,13 +455,20 @@ router.post("/basic/audio", async (req, res) => {
 // POST /api/interviews/real
 router.post("/real", async (req, res) => {
   try {
-    const { questionText, images, durationSeconds, volumeSamples } = req.body;
+    const { questionText, durationSeconds, volumeSamples, cameraAnalysis, interviewType } =
+      req.body;
     const userId = req.user.id;
     const finalAnswerText = normalizeAnswerText(req.body);
 
+    console.log("[camera save] user:", userId);
+    console.log("[camera save] question:", questionText?.slice?.(0, 80));
+    console.log("[camera save] answer length:", finalAnswerText.length);
+    console.log("[camera save] interviewType:", interviewType || "real");
+    console.log("[camera save] cameraAnalysis exists:", !!cameraAnalysis);
+
     appLog("POST /real", {
       answerLen: finalAnswerText.length,
-      hasImages: Array.isArray(images) && images.length > 0,
+      interviewType: interviewType || "camera",
     });
 
     if (!questionText || !String(questionText).trim()) {
@@ -455,7 +478,14 @@ router.post("/real", async (req, res) => {
       });
     }
 
-    if (!finalAnswerText || isPlaceholderAnswer(finalAnswerText)) {
+    if (!finalAnswerText) {
+      return res.status(400).json({
+        success: false,
+        message: "답변 내용이 없어 저장할 수 없습니다.",
+      });
+    }
+
+    if (isPlaceholderAnswer(finalAnswerText)) {
       return res.status(400).json({
         success: false,
         message:
@@ -534,17 +564,19 @@ router.post("/real", async (req, res) => {
       );
     }
 
-    const { evaluation, metrics, cameraAnalysis } = await saveCameraInterviewExtras({
-      interviewId,
-      userId,
-      mode: "real",
-      questionText,
-      answerText: finalAnswerText,
-      images,
-      durationSeconds,
-      volumeSamples,
-    });
+    const { evaluation, metrics, cameraAnalysis: savedCameraAnalysis } =
+      await saveCameraInterviewExtras({
+        interviewId,
+        userId,
+        mode: "real",
+        questionText,
+        answerText: finalAnswerText,
+        cameraAnalysis,
+        durationSeconds,
+        volumeSamples,
+      });
 
+    console.log("[camera save] scores:", evaluation.scores);
     appLog("real interview saved", { interviewId, overallScore: evaluation.overallScore });
 
     return res.status(201).json({
@@ -558,10 +590,11 @@ router.post("/real", async (req, res) => {
       overallScore: evaluation.overallScore,
       scores: evaluation.scores,
       metrics,
-      cameraAnalysis,
+      cameraAnalysis: savedCameraAnalysis,
       feedbackDetail: evaluation.feedback,
     });
   } catch (error) {
+    console.error("[camera save] real error:", error);
     appLogError("실전면접 저장 오류", { message: error.message });
 
     return res.status(500).json({

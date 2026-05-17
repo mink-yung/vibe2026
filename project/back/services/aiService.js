@@ -170,6 +170,13 @@ function clampScore(value) {
   return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
 }
 
+export function buildSessionAudioMetrics({ transcript, durationSeconds, volumeSamples }) {
+  return {
+    speakingSpeed: calculateSpeakingSpeedScore({ transcript, durationSeconds }),
+    intonation: calculateIntonationScore({ volumeSamples }),
+  };
+}
+
 function calculateSpeakingSpeedScore({ transcript, durationSeconds }) {
   if (!transcript || !durationSeconds || durationSeconds <= 0) {
     return 70;

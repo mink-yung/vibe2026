@@ -418,11 +418,19 @@ function closeLoginOutside(e) {
 const INTERVIEW_EXIT_SKIP_KEY = { basic: 'interviewExitWarnDontShow_basic', real: 'interviewExitWarnDontShow_real' };
 const INTERVIEW_EXIT_SECTION = { basic: 'normal', real: 'basic' };
 
+function navigateInterviewExit(kind) {
+  if (document.getElementById('dashSection')) {
+    showSection(INTERVIEW_EXIT_SECTION[kind]);
+  } else {
+    location.href = 'mock-interview.html';
+  }
+}
+
 function openInterviewExitWarnModal(kind) {
   if (kind !== 'basic' && kind !== 'real') return;
   try {
     if (localStorage.getItem(INTERVIEW_EXIT_SKIP_KEY[kind]) === '1') {
-      showSection(INTERVIEW_EXIT_SECTION[kind]);
+      navigateInterviewExit(kind);
       return;
     }
   } catch (_) {}
@@ -432,7 +440,7 @@ function openInterviewExitWarnModal(kind) {
     m.classList.add('open');
     document.body.style.overflow = 'hidden';
   } else {
-    showSection(INTERVIEW_EXIT_SECTION[kind]);
+    navigateInterviewExit(kind);
     window.__interviewExitPendingKind = null;
   }
 }
@@ -460,7 +468,7 @@ function interviewExitWarnConfirmLeave(dontShowAgain) {
       localStorage.setItem(INTERVIEW_EXIT_SKIP_KEY[kind], '1');
     } catch (_) {}
   }
-  showSection(INTERVIEW_EXIT_SECTION[kind]);
+  navigateInterviewExit(kind);
 }
 
 function getLoginErrorEl() {
@@ -1070,6 +1078,13 @@ function isInvalidCameraAnswerText(text) {
   });
 }
 
+function slimVolumeSamplesForApi(samples) {
+  if (!Array.isArray(samples)) return [];
+  return samples.slice(-60).map(function (v) {
+    return Math.round(Number(v) * 1000) / 1000;
+  });
+}
+
 function buildCameraInterviewPayload(sd, fallbackQuestion) {
   let questionText = fallbackQuestion || '면접';
   let answerText = '';
@@ -1089,19 +1104,22 @@ function buildCameraInterviewPayload(sd, fallbackQuestion) {
     questionText: questionText,
     answerText: answerText.trim(),
     transcript: answerText.trim(),
-    images: Array.isArray(sd.snapshotImages) ? sd.snapshotImages : [],
-    durationSeconds: sd.durationSeconds || (sd.elapsedMs ? Math.max(1, Math.round(sd.elapsedMs / 1000)) : null),
-    volumeSamples: Array.isArray(sd.volumeSamples) ? sd.volumeSamples : [],
+    interviewType: 'camera',
+    durationSeconds:
+      sd.durationSeconds || (sd.elapsedMs ? Math.max(1, Math.round(sd.elapsedMs / 1000)) : null),
+    volumeSamples: slimVolumeSamplesForApi(sd.volumeSamples),
+    cameraAnalysis: sd.cameraAnalysis && typeof sd.cameraAnalysis === 'object' ? sd.cameraAnalysis : undefined,
   };
 }
 
 async function finishBasicVideoInterviewSubmit(hooks) {
   const ui = normalizeCameraSubmitHooks(hooks);
-  if (typeof getStoredAuthToken !== 'function' || !getStoredAuthToken()) {
-    if (!ui.silent) {
-      alert('로그인이 필요합니다.');
-      location.href = 'dashboard.html#login';
-    }
+  const token = typeof getStoredAuthToken === 'function' ? getStoredAuthToken() : null;
+  if (!token) {
+    const msg = '로그인이 만료되었습니다. 다시 로그인해 주세요.';
+    ui.onEnd?.();
+    if (!ui.silent) alert(msg);
+    location.href = 'login.html';
     return { ok: false, message: 'LOGIN_REQUIRED' };
   }
   const sd = ui.sessionData || {};
@@ -1112,10 +1130,13 @@ async function finishBasicVideoInterviewSubmit(hooks) {
     if (!ui.silent) alert(msg);
     return { ok: false, message: msg };
   }
-  console.log('[finishBasicVideoInterviewSubmit] payload', {
-    answerLen: payload.answerText.length,
-    images: payload.images.length,
+  console.log('[camera save payload]', {
+    question: payload.questionText?.slice(0, 60),
+    answerLength: payload.answerText.length,
     durationSeconds: payload.durationSeconds,
+    volumeSampleCount: payload.volumeSamples?.length,
+    cameraAnalysisExists: !!payload.cameraAnalysis,
+    interviewType: payload.interviewType,
   });
   try {
     const res = await apiPostInterviewsBasic(payload);
@@ -1123,12 +1144,15 @@ async function finishBasicVideoInterviewSubmit(hooks) {
     if (res.status === 401) {
       if (typeof clearStoredAuth === 'function') clearStoredAuth();
       ui.onEnd?.();
-      location.href = 'dashboard.html#login';
+      location.href = 'login.html';
       return { ok: false, message: 'UNAUTHORIZED' };
     }
     if (!res.ok) {
       ui.onEnd?.();
-      const msg = data.message || '저장에 실패했습니다.';
+      let msg = data.message || '저장에 실패했습니다.';
+      if (res.status === 413) {
+        msg = data.message || '전송 데이터가 너무 큽니다. 잠시 후 다시 시도해 주세요.';
+      }
       if (!ui.silent) alert(msg);
       return { ok: false, message: msg };
     }
@@ -1159,11 +1183,12 @@ async function finishBasicVideoInterviewSubmit(hooks) {
 
 async function finishRealInterviewSubmit(hooks) {
   const ui = normalizeCameraSubmitHooks(hooks);
-  if (typeof getStoredAuthToken !== 'function' || !getStoredAuthToken()) {
-    if (!ui.silent) {
-      alert('로그인이 필요합니다.');
-      location.href = 'dashboard.html#login';
-    }
+  const tokenReal = typeof getStoredAuthToken === 'function' ? getStoredAuthToken() : null;
+  if (!tokenReal) {
+    const msg = '로그인이 만료되었습니다. 다시 로그인해 주세요.';
+    ui.onEnd?.();
+    if (!ui.silent) alert(msg);
+    location.href = 'login.html';
     return { ok: false, message: 'LOGIN_REQUIRED' };
   }
   const sd = ui.sessionData || {};
@@ -1188,10 +1213,13 @@ async function finishRealInterviewSubmit(hooks) {
     if (!ui.silent) alert(msg);
     return { ok: false, message: msg };
   }
-  console.log('[finishRealInterviewSubmit] payload', {
-    answerLen: payload.answerText.length,
-    images: payload.images.length,
+  console.log('[camera save payload]', {
+    question: payload.questionText?.slice(0, 60),
+    answerLength: payload.answerText.length,
     durationSeconds: payload.durationSeconds,
+    volumeSampleCount: payload.volumeSamples?.length,
+    cameraAnalysisExists: !!payload.cameraAnalysis,
+    interviewType: payload.interviewType,
   });
   try {
     const res = await apiPostInterviewsReal(payload);
@@ -1199,12 +1227,15 @@ async function finishRealInterviewSubmit(hooks) {
     if (res.status === 401) {
       if (typeof clearStoredAuth === 'function') clearStoredAuth();
       ui.onEnd?.();
-      location.href = 'dashboard.html#login';
+      location.href = 'login.html';
       return { ok: false, message: 'UNAUTHORIZED' };
     }
     if (!res.ok) {
       ui.onEnd?.();
-      const msg = data.message || '저장에 실패했습니다.';
+      let msg = data.message || '저장에 실패했습니다.';
+      if (res.status === 413) {
+        msg = data.message || '전송 데이터가 너무 큽니다. 잠시 후 다시 시도해 주세요.';
+      }
       if (!ui.silent) alert(msg);
       return { ok: false, message: msg };
     }

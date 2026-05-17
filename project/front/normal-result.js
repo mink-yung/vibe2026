@@ -88,9 +88,12 @@ function buildNormalResultFromBasicApi(d) {
   const metrics = d.metrics || null;
 
   let deliveryBuilt =
-    typeof metricItemsFromDeliveryApi === 'function' && metrics?.delivery
-      ? metricItemsFromDeliveryApi(metrics.delivery, BASIC_DELIVERY_DEFS)
+    typeof metricItemsFromScoresApi === 'function' && d.scores
+      ? metricItemsFromScoresApi(d.scores)
       : null;
+  if (!deliveryBuilt && typeof metricItemsFromDeliveryApi === 'function' && metrics?.delivery) {
+    deliveryBuilt = metricItemsFromDeliveryApi(metrics.delivery, BASIC_DELIVERY_DEFS);
+  }
   let contentBuilt =
     typeof metricItemsFromContentApi === 'function' && metrics?.content
       ? metricItemsFromContentApi(metrics.content, BASIC_CONTENT_DEFS)
