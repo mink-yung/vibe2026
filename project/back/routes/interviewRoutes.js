@@ -1,7 +1,10 @@
 import express from "express";
 import { pool } from "../config/db.js";
 import { authRequired } from "../middleware/authMiddleware.js";
-import { generateInterviewFeedback } from "../services/aiService.js";
+import {
+  generateInterviewFeedback,
+  generateCameraAnalysis
+} from "../services/aiService.js";
 
 const router = express.Router();
 
@@ -537,6 +540,100 @@ router.get("/recent/summary", async (req, res) => {
   }
 });
 
+// 카메라 AI 분석 저장
+// POST /api/interviews/camera/analyze
+router.post("/camera/analyze", async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const {
+      interviewId,
+      mode,
+      images,
+      transcript,
+      durationSeconds,
+      volumeSamples
+    } = req.body;
+
+    if (!interviewId) {
+      return res.status(400).json({
+        success: false,
+        message: "interviewId가 필요합니다."
+      });
+    }
+
+    if (!Array.isArray(images) || images.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "분석할 카메라 이미지가 필요합니다."
+      });
+    }
+
+    const [interviews] = await pool.execute(
+      `SELECT id, user_id, mode
+       FROM interviews
+       WHERE id = ?
+         AND user_id = ?`,
+      [interviewId, userId]
+    );
+
+    if (interviews.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "면접 기록을 찾을 수 없습니다."
+      });
+    }
+
+    const safeImages = images.slice(0, 3);
+
+    const cameraAnalysis = await generateCameraAnalysis({
+      mode: mode || interviews[0].mode,
+      images: safeImages,
+      transcript,
+      durationSeconds,
+      volumeSamples
+    });
+
+    const metrics = {
+      expression: cameraAnalysis.expression,
+      intonation: cameraAnalysis.intonation,
+      postureStability: cameraAnalysis.postureStability,
+      speakingSpeed: cameraAnalysis.speakingSpeed,
+      eyeContact: cameraAnalysis.eyeContact
+    };
+
+    await pool.execute(
+      `UPDATE interviews
+       SET camera_analysis_json = ?,
+           metrics_json = ?
+       WHERE id = ?
+         AND user_id = ?`,
+      [
+        JSON.stringify(cameraAnalysis),
+        JSON.stringify(metrics),
+        interviewId,
+        userId
+      ]
+    );
+
+    return res.json({
+      success: true,
+      interviewId: Number(interviewId),
+      mode: mode || interviews[0].mode,
+      cameraAnalysis,
+      metrics
+    });
+  } catch (error) {
+    console.error("카메라 분석 저장 오류:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "카메라 분석 중 서버 오류가 발생했습니다.",
+      error: error.message
+    });
+  }
+});
+
 // 특정 면접 상세 조회
 // GET /api/interviews/:interviewId
 router.get("/:interviewId", async (req, res) => {
@@ -552,6 +649,8 @@ router.get("/:interviewId", async (req, res) => {
         answer_text AS answerText,
         summary,
         overall_score AS overallScore,
+        camera_analysis_json AS cameraAnalysisJson,
+        metrics_json AS metricsJson,
         created_at AS createdAt
        FROM interviews
        WHERE id = ?
@@ -579,10 +678,18 @@ router.get("/:interviewId", async (req, res) => {
       [interviewId]
     );
 
+    const interview = interviews[0];
+
     return res.json({
       success: true,
       interview: {
-        ...interviews[0],
+        ...interview,
+        cameraAnalysis: interview.cameraAnalysisJson
+          ? JSON.parse(interview.cameraAnalysisJson)
+          : null,
+        metrics: interview.metricsJson
+          ? JSON.parse(interview.metricsJson)
+          : null,
         feedbacks
       }
     });
