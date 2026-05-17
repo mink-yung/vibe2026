@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로그인 · AI 면접 준비 플랫폼</title>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card" style="text-align:center; padding: 48px 32px;">
+      <p id="login-redirect-msg">로그인 페이지로 이동 중…</p>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('verified') === '1') {
+        try {
+          sessionStorage.setItem('authEmailVerified', '1');
+        } catch (_) {}
+      }
+      var target = 'dashboard.html#login';
+      if (params.get('verified') === '1') {
+        target = 'dashboard.html#login&verified=1';
+      }
+      window.location.replace(target);
+    })();
+  </script>
+</body>
+</html>

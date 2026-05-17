@@ -395,6 +395,12 @@ function openLoginModal() {
   el.classList.add('open');
   document.body.style.overflow = 'hidden';
   clearLoginError();
+  try {
+    if (sessionStorage.getItem('authEmailVerified') === '1') {
+      showEmailVerifiedLoginBanner();
+      sessionStorage.removeItem('authEmailVerified');
+    }
+  } catch (_) {}
 }
 
 function closeLoginModal() {
@@ -473,6 +479,23 @@ function clearLoginError() {
   if (!el) return;
   el.textContent = '';
   el.hidden = true;
+}
+
+function setLoginSuccess(message) {
+  const el = document.getElementById('login-success');
+  if (!el) return;
+  if (message) {
+    el.textContent = message;
+    el.hidden = false;
+  } else {
+    el.textContent = '';
+    el.hidden = true;
+  }
+}
+
+function showEmailVerifiedLoginBanner() {
+  setLoginSuccess('이메일 인증이 완료되었습니다. 로그인해 주세요.');
+  clearLoginError();
 }
 
 function escapeHtml(str) {
@@ -1245,10 +1268,20 @@ async function finishRealInterviewSubmit(hooks) {
 /** 회원가입 등에서 `dashboard.html#login`으로 온 경우 로그인 모달 자동 오픈 */
 (function initOpenLoginFromHash() {
   function tryOpen() {
-    if (window.location.hash !== '#login') return;
+    const hash = window.location.hash || '';
+    const params = new URLSearchParams(window.location.search);
+    const verified =
+      params.get('verified') === '1' ||
+      hash.indexOf('verified=1') !== -1;
+    if (verified) {
+      try {
+        sessionStorage.setItem('authEmailVerified', '1');
+      } catch (_) {}
+    }
+    if (hash.indexOf('login') === -1 && !verified) return;
     openLoginModal();
     try {
-      history.replaceState(null, '', window.location.pathname + window.location.search);
+      history.replaceState(null, '', window.location.pathname);
     } catch (_) {}
   }
   if (document.readyState === 'loading') {

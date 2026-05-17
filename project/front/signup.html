@@ -13,6 +13,7 @@
       <h1 class="auth-card-title">회원가입</h1>
       <p class="auth-card-desc">면접 연습과 AI 피드백을 위해 계정을 만드세요.</p>
       <form class="auth-form" id="signupForm" onsubmit="handleSignupSubmit(event)">
+        <div id="signup-success" class="auth-alert auth-alert-success" role="status" hidden></div>
         <div id="signup-error" class="auth-alert auth-alert-error" role="alert" hidden></div>
         <label class="auth-label" for="signup-name">이름</label>
         <input type="text" id="signup-name" class="auth-input" name="name" autocomplete="name" required placeholder="홍길동" />
@@ -53,6 +54,12 @@
       el.textContent = '';
       el.hidden = true;
     }
+    function setSignupSuccess(msg) {
+      var el = document.getElementById('signup-success');
+      if (!el) return;
+      el.textContent = msg || '';
+      el.hidden = !msg;
+    }
     function pickSignupErrorMessage(data) {
       if (!data || typeof data !== 'object') return '가입 요청을 처리할 수 없습니다.';
       if (typeof data.message === 'string' && data.message.trim()) return data.message.trim();
@@ -63,6 +70,7 @@
     async function handleSignupSubmit(e) {
       e.preventDefault();
       clearSignupError();
+      setSignupSuccess('');
       var p = document.getElementById('signup-password').value;
       var p2 = document.getElementById('signup-password2').value;
       if (p !== p2) {
@@ -89,7 +97,11 @@
           setSignupError(pickSignupErrorMessage(data));
           return;
         }
-        location.href = 'dashboard.html#login';
+        setSignupSuccess(
+          data.message ||
+            '인증 메일을 보냈습니다. 메일함(스팸함 포함)에서 인증 링크를 눌러 주세요.'
+        );
+        document.getElementById('signupForm').reset();
       } catch (err) {
         console.error(err);
         setSignupError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');

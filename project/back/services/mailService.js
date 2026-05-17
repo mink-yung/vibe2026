@@ -11,7 +11,11 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendVerificationEmail(email, token) {
-  const verifyUrl = `${process.env.BACKEND_PUBLIC_URL}/api/auth/verify-email?token=${token}`;
+  const backendBase = (process.env.BACKEND_PUBLIC_URL || "").replace(/\/$/, "");
+  if (!backendBase) {
+    throw new Error("BACKEND_PUBLIC_URL is not configured");
+  }
+  const verifyUrl = `${backendBase}/api/auth/verify-email?token=${encodeURIComponent(token)}`;
 
   await transporter.sendMail({
     from: process.env.MAIL_FROM,
