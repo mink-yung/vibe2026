@@ -126,6 +126,39 @@ function updateCameraInterviewUi(cfg) {
   if (cfg.userWrap) {
     cfg.userWrap.classList.toggle('cam-recording', state.isRecording && !state.isSubmitting);
   }
+
+  if (typeof setInterviewerAreaState === 'function') {
+    if (cfg.interviewerAreaEl) {
+      if (state.isSubmitting) {
+        setInterviewerAreaState(cfg.interviewerAreaEl, 'thinking');
+      } else if (state.isRecording) {
+        setInterviewerAreaState(cfg.interviewerAreaEl, 'listening');
+      } else if (state.isStarted) {
+        setInterviewerAreaState(cfg.interviewerAreaEl, 'speaking');
+      } else {
+        setInterviewerAreaState(cfg.interviewerAreaEl, null);
+      }
+    }
+    if (cfg.mode === 'real' && cfg.interviewerPanels) {
+      var item = getQuestionItem(cfg, state.currentQuestionIndex || 0);
+      [1, 2, 3].forEach(function (n) {
+        var panel = cfg.interviewerPanels[n];
+        if (!panel) return;
+        var wrap = panel.querySelector('.bi-interviewer-photo') || panel;
+        if (item.interviewer === n && state.isStarted) {
+          if (state.isSubmitting) {
+            setInterviewerAreaState(wrap, 'thinking');
+          } else if (state.isRecording) {
+            setInterviewerAreaState(wrap, 'listening');
+          } else {
+            setInterviewerAreaState(wrap, 'speaking');
+          }
+        } else {
+          setInterviewerAreaState(wrap, null);
+        }
+      });
+    }
+  }
 }
 
 function getQuestionItem(cfg, idx) {
@@ -771,6 +804,7 @@ function buildVideoInterviewCameraConfig() {
   return {
     sectionEl: section,
     mode: 'basic',
+    interviewerAreaEl: section.querySelector('.vi-interviewer-photo'),
     speechLang: 'ko-KR',
     videoEl: document.getElementById('vi-user-video'),
     avatarEl: section.querySelector('.vi-video-wrap.user .vi-avatar'),

@@ -1,0 +1,199 @@
+/* 면접관 이미지 공통 */
+.interviewer-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.interviewer-area--compact {
+  margin-bottom: 8px;
+}
+
+.interviewer-area--inline {
+  margin-bottom: 0;
+  margin-right: 12px;
+}
+
+.interviewer-img-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #f8f9fa 0%, #fff 100%);
+  border-radius: 20px;
+  padding: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+}
+
+.interviewer-img {
+  width: 160px;
+  max-width: 35vw;
+  height: auto;
+  object-fit: contain;
+  border-radius: 16px;
+  display: block;
+}
+
+.interviewer-img-fallback {
+  font-size: 12px;
+  color: #868e96;
+  padding: 12px;
+  text-align: center;
+}
+
+.interviewer-img-fallback[hidden] {
+  display: none !important;
+}
+
+/* 상태 클래스 (이미지는 동일, 링/테두리만 변경) */
+.interviewer-speaking .interviewer-img-wrap {
+  box-shadow: 0 0 0 2px #74c0fc;
+}
+
+.interviewer-listening .interviewer-img-wrap {
+  box-shadow: 0 0 0 2px #51cf66;
+}
+
+.interviewer-thinking .interviewer-img-wrap {
+  box-shadow: 0 0 0 2px #ffd43b;
+  opacity: 0.92;
+}
+
+.vi-interviewer-photo.interviewer-speaking .interviewer-img,
+.bi-interviewer-photo.interviewer-speaking .interviewer-img {
+  box-shadow: 0 0 0 2px #74c0fc;
+}
+
+.vi-interviewer-photo.interviewer-listening .interviewer-img,
+.bi-interviewer-photo.interviewer-listening .interviewer-img {
+  box-shadow: 0 0 0 2px #51cf66;
+}
+
+.vi-interviewer-photo.interviewer-thinking .interviewer-img,
+.bi-interviewer-photo.interviewer-thinking .interviewer-img {
+  box-shadow: 0 0 0 2px #ffd43b;
+  opacity: 0.92;
+}
+
+/* 빠른면접: 질문 카드 상단 */
+.qi-interviewer-block {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.qi-interviewer-block .interviewer-img-wrap {
+  margin: 0 auto;
+}
+
+.qi-interviewer-block .interviewer-img {
+  width: 140px;
+}
+
+.qi-interviewer-block .voice-icon {
+  display: none;
+}
+
+.qi-interviewer-block.qi-show-voice-fallback .voice-icon {
+  display: flex;
+}
+
+.qi-interviewer-block.qi-show-voice-fallback .interviewer-img-wrap {
+  display: none;
+}
+
+/* 모의면접 카드 */
+.mock-card-interviewer {
+  margin-bottom: 14px;
+}
+
+.mock-card-interviewer .interviewer-img {
+  width: 100px;
+  max-width: 100%;
+  border-radius: 14px;
+}
+
+/* 기본 카메라 면접 — 면접관 영역 */
+#videoInterviewSection .vi-video-wrap.interviewer .vi-avatar {
+  display: none;
+}
+
+#videoInterviewSection .vi-interviewer-photo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#videoInterviewSection .vi-interviewer-photo .interviewer-img {
+  width: min(180px, 45%);
+  max-height: 70%;
+  object-fit: contain;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+#videoInterviewSection.vi-theme-light .vi-interviewer-photo .interviewer-img {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* 실전 면접 — 작은 패널 */
+#basicInterviewSection .bi-interviewer-panel .bi-avatar {
+  display: none;
+}
+
+#basicInterviewSection .bi-interviewer-panel .bi-interviewer-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 60px;
+}
+
+#basicInterviewSection .bi-interviewer-panel .interviewer-img {
+  width: 100%;
+  max-width: 72px;
+  max-height: 72px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+#basicInterviewSection .bi-interviewer-panel.active .interviewer-img-wrap {
+  box-shadow: 0 0 0 2px #339af0;
+}
+
+@media (max-width: 768px) {
+  .interviewer-img {
+    width: 120px;
+    max-width: 45vw;
+  }
+
+  .qi-interviewer-block .interviewer-img {
+    width: 110px;
+  }
+
+  #videoInterviewSection .vi-interviewer-photo .interviewer-img {
+    width: min(120px, 40vw);
+  }
+
+  #basicInterviewSection .bi-interviewer-panel .interviewer-img {
+    max-width: 56px;
+    max-height: 56px;
+  }
+}
+
+@media (max-width: 430px) {
+  .interviewer-img {
+    width: 100px;
+    max-width: 55vw;
+  }
+
+  .mock-card-interviewer .interviewer-img {
+    width: 80px;
+  }
+}

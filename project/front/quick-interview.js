@@ -199,6 +199,19 @@ function updateUi() {
 
   setWaveformActive(state.isListening);
 
+  var ivBlock = document.getElementById('qi-interviewer-block');
+  if (ivBlock && typeof setInterviewerAreaState === 'function') {
+    if (state.isSubmitting) {
+      setInterviewerAreaState(ivBlock, 'thinking');
+    } else if (state.isListening) {
+      setInterviewerAreaState(ivBlock, 'listening');
+    } else if (state.isStarted) {
+      setInterviewerAreaState(ivBlock, 'speaking');
+    } else {
+      setInterviewerAreaState(ivBlock, null);
+    }
+  }
+
   if (state.isSubmitting) {
     setStatus('피드백 생성 중…');
     setVoiceNote('AI가 답변을 분석하고 있습니다. 잠시만 기다려 주세요.');

@@ -1,0 +1,581 @@
+/**
+ * 모바일 반응형 (≤768px, ≤480px)
+ * 데스크탑 스타일은 기존 CSS 유지, 모바일에서만 오버라이드
+ */
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── 768px 이하 ── */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 24px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  p,
+  label,
+  .auth-label,
+  .auth-card-desc {
+    font-size: 15px;
+  }
+
+  input,
+  textarea,
+  select,
+  .auth-input {
+    width: 100%;
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  button,
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-join,
+  .auth-submit,
+  .mock-card-btn,
+  .stop-btn,
+  .retry-btn {
+    min-height: 44px;
+    font-size: 15px;
+  }
+
+  /* 사이드바 → 상단 가로 스크롤 네비 */
+  .sidebar {
+    position: relative;
+    width: 100%;
+    min-height: auto;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 10px 12px;
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+    gap: 4px;
+  }
+
+  .sidebar .logo-box {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .sidebar nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .sidebar .nav-item {
+    flex: 1 1 auto;
+    min-width: calc(50% - 4px);
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  .sidebar .theme-btns {
+    display: none;
+  }
+
+  .main {
+    margin-left: 0;
+    min-height: auto;
+  }
+
+  .topbar {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .content {
+    padding: 12px;
+  }
+
+  .hero {
+    padding: 28px 20px;
+  }
+
+  .hero h1 {
+    font-size: 26px;
+  }
+
+  .hero-btns {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .hero-btns .btn-primary,
+  .hero-btns .btn-secondary {
+    width: 100%;
+  }
+
+  .cards-row,
+  .bottom-row,
+  .mock-cards-grid,
+  .ai-eval-row,
+  .bs-persona-cards {
+    grid-template-columns: 1fr !important;
+  }
+
+  .card,
+  .section,
+  .panel,
+  .qi-card,
+  .guide-card,
+  .tip-card {
+    width: 100%;
+    padding: 16px;
+  }
+
+  .float-card {
+    display: none;
+  }
+
+  .button-group,
+  .actions,
+  .btn-group,
+  .hero-btns,
+  .interview-exit-warn-actions,
+  .device-check-actions,
+  .modal-footer-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .interview-exit-warn-actions .btn-primary,
+  .interview-exit-warn-actions .btn-secondary,
+  .device-check-actions .btn-primary,
+  .device-check-actions .btn-secondary {
+    width: 100%;
+  }
+
+  /* 모달 */
+  .modal-box,
+  .modal-box-auth,
+  .modal-box-exit-warn,
+  .modal-box-device {
+    width: calc(100% - 32px) !important;
+    max-width: 420px;
+    margin: 16px;
+  }
+
+  .modal-header,
+  .modal-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .modal-radar-col {
+    overflow-x: auto;
+  }
+
+  /* 인증 페이지 */
+  .auth-page {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: 24px;
+  }
+
+  .auth-card,
+  .auth-box,
+  .form-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 24px 18px;
+  }
+
+  /* 빠른면접 */
+  .qi-page,
+  .mock-page,
+  .br-page,
+  .qr-page {
+    padding: 16px 12px;
+  }
+
+  .qi-body {
+    grid-template-columns: 1fr !important;
+  }
+
+  .qi-title {
+    font-size: 24px;
+  }
+
+  .question-text {
+    font-size: 17px;
+  }
+
+  .progress-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .progress-bar-wrap {
+    min-width: 100%;
+    margin: 8px 0;
+    order: 3;
+  }
+
+  /* 결과 페이지 */
+  .qr-toprow,
+  .br-toprow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .qr-toprow-spacer,
+  .br-toprow-spacer {
+    display: none;
+  }
+
+  .br-header {
+    position: static;
+    transform: none;
+    text-align: left;
+  }
+
+  .br-title,
+  .qr-title {
+    font-size: 22px;
+  }
+
+  .perf-body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 24px;
+  }
+
+  .perf-divider {
+    width: 100%;
+    height: 1px;
+  }
+
+  .metrics-row-5,
+  .metrics-row-2 {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .metrics-row-5 .metric-item,
+  .metrics-row-2 .metric-item,
+  .metric-item {
+    width: 100% !important;
+    max-width: 100%;
+    flex-shrink: 1;
+  }
+
+  .bottom-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .radar-wrap svg,
+  #radarChart,
+  #radarChart2,
+  .result-chart svg,
+  .result-chart canvas {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .replay-btn {
+    align-self: flex-start;
+    margin-top: 8px;
+    white-space: normal;
+  }
+
+  .record-q-item {
+    flex-wrap: wrap;
+  }
+
+  /* 모의면접 */
+  .mock-title {
+    font-size: 22px;
+  }
+
+  .mock-card {
+    padding: 24px 18px;
+  }
+
+  /* 카메라 면접 — 기본 */
+  #videoInterviewSection {
+    position: fixed !important;
+    inset: 0;
+    z-index: 500;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #videoInterviewSection .vi-wrap {
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+  }
+
+  #videoInterviewSection .vi-topbar {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  #videoInterviewSection .vi-topbar-center {
+    flex-wrap: wrap;
+    font-size: 12px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  #videoInterviewSection .vi-videos {
+    min-height: 40vh;
+    flex: none;
+  }
+
+  #videoInterviewSection .vi-video-wrap.user {
+    flex: 0 0 auto;
+    min-height: 28vh;
+  }
+
+  #videoInterviewSection .cam-user-video {
+    width: 100%;
+    max-height: 45vh;
+    object-fit: cover;
+  }
+
+  #videoInterviewSection .vi-controls {
+    flex-direction: column;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  #videoInterviewSection .vi-controls-left,
+  #videoInterviewSection .vi-controls-right {
+    display: none;
+    min-width: 0;
+  }
+
+  #videoInterviewSection .vi-controls-center {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    gap: 10px;
+  }
+
+  #videoInterviewSection .vi-ctrl-btn {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 120px;
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  #videoInterviewSection .vi-ctrl-btn.cam-start-btn,
+  #videoInterviewSection .vi-ctrl-btn.cam-end-answer-btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  #videoInterviewSection .vi-interviewer-caption-overlay {
+    left: 8px;
+    right: 8px;
+    max-width: none;
+    padding: 10px 12px;
+  }
+
+  #videoInterviewSection .vi-question-text {
+    font-size: 15px;
+  }
+
+  .cam-live-transcript {
+    margin: 0 12px 8px;
+    max-height: 6em;
+    font-size: 14px;
+  }
+
+  /* 실전 면접 카메라 */
+  #basicInterviewSection {
+    position: fixed !important;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  #basicInterviewSection .bi-wrap {
+    min-height: 100dvh;
+    height: auto;
+  }
+
+  #basicInterviewSection .bi-topbar {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+  }
+
+  #basicInterviewSection .bi-body {
+    flex-direction: column;
+  }
+
+  #basicInterviewSection .bi-video-side {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #basicInterviewSection .bi-video-small {
+    flex: 1 1 calc(33% - 8px);
+    min-width: 90px;
+  }
+
+  #basicInterviewSection .bi-video-main {
+    width: 100%;
+    min-height: 28vh;
+  }
+
+  #basicInterviewSection .cam-user-video {
+    width: 100%;
+    max-height: 45vh;
+    object-fit: cover;
+  }
+
+  #basicInterviewSection .bi-controls {
+    flex-direction: column;
+    padding: 12px;
+  }
+
+  #basicInterviewSection .bi-controls-left,
+  #basicInterviewSection .bi-controls-right {
+    display: none;
+    min-width: 0;
+  }
+
+  #basicInterviewSection .bi-controls-center {
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  #basicInterviewSection .bi-ctrl-btn {
+    flex: 1 1 calc(50% - 8px);
+    min-height: 44px;
+  }
+
+  #basicInterviewSection .bi-ctrl-btn.cam-start-btn,
+  #basicInterviewSection .bi-ctrl-btn.cam-end-answer-btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  /* 면접관 이미지 영역 (사진 연동 예정 — .interviewer-img 추가 시 표시) */
+  .interviewer-area,
+  .interviewer-bg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .interviewer-img {
+    width: 160px;
+    max-width: 40vw;
+    height: auto;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .interviewer-bg .vi-avatar,
+  .interviewer-bg .bi-avatar,
+  .interviewer-area .vi-avatar {
+    opacity: 0.85;
+    max-width: min(160px, 40vw);
+  }
+
+  .interviewer-img[src] + .vi-avatar,
+  .interviewer-img[src] + .bi-avatar {
+    display: none;
+  }
+
+  /* 면접 기록 */
+  .ir-detail-modal {
+    width: calc(100% - 24px) !important;
+  }
+
+  /* 분석 모달 2열 → 1열 */
+  .modal-body .modal-two-col {
+    flex-direction: column !important;
+  }
+}
+
+/* ── 480px 이하 (좁은 폰) ── */
+@media (max-width: 480px) {
+  .sidebar .nav-item {
+    min-width: 100%;
+  }
+
+  .hero h1 {
+    font-size: 22px;
+  }
+
+  .qi-title {
+    font-size: 20px;
+  }
+
+  #videoInterviewSection .vi-ctrl-btn,
+  #basicInterviewSection .bi-ctrl-btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .interviewer-img {
+    width: 120px;
+    max-width: 50vw;
+  }
+
+  .score-num {
+    font-size: 26px;
+  }
+
+  .analysis-body {
+    flex-direction: column;
+  }
+
+  .score-circle-container {
+    margin: 0 auto;
+  }
+
+  .badges {
+    flex-wrap: wrap;
+  }
+
+  #videoInterviewSection.vi-theme-light .vi-wrap {
+    background: #fff;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+}
