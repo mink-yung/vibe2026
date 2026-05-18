@@ -395,6 +395,12 @@ function openLoginModal() {
   el.classList.add('open');
   document.body.style.overflow = 'hidden';
   clearLoginError();
+  try {
+    if (sessionStorage.getItem('authEmailVerified') === '1') {
+      showEmailVerifiedLoginBanner();
+      sessionStorage.removeItem('authEmailVerified');
+    }
+  } catch (_) {}
 }
 
 function closeLoginModal() {
@@ -412,11 +418,19 @@ function closeLoginOutside(e) {
 const INTERVIEW_EXIT_SKIP_KEY = { basic: 'interviewExitWarnDontShow_basic', real: 'interviewExitWarnDontShow_real' };
 const INTERVIEW_EXIT_SECTION = { basic: 'normal', real: 'basic' };
 
+function navigateInterviewExit(kind) {
+  if (document.getElementById('dashSection')) {
+    showSection(INTERVIEW_EXIT_SECTION[kind]);
+  } else {
+    location.href = 'mock-interview.html';
+  }
+}
+
 function openInterviewExitWarnModal(kind) {
   if (kind !== 'basic' && kind !== 'real') return;
   try {
     if (localStorage.getItem(INTERVIEW_EXIT_SKIP_KEY[kind]) === '1') {
-      showSection(INTERVIEW_EXIT_SECTION[kind]);
+      navigateInterviewExit(kind);
       return;
     }
   } catch (_) {}
@@ -426,7 +440,7 @@ function openInterviewExitWarnModal(kind) {
     m.classList.add('open');
     document.body.style.overflow = 'hidden';
   } else {
-    showSection(INTERVIEW_EXIT_SECTION[kind]);
+    navigateInterviewExit(kind);
     window.__interviewExitPendingKind = null;
   }
 }
@@ -454,7 +468,7 @@ function interviewExitWarnConfirmLeave(dontShowAgain) {
       localStorage.setItem(INTERVIEW_EXIT_SKIP_KEY[kind], '1');
     } catch (_) {}
   }
-  showSection(INTERVIEW_EXIT_SECTION[kind]);
+  navigateInterviewExit(kind);
 }
 
 function getLoginErrorEl() {
@@ -473,6 +487,23 @@ function clearLoginError() {
   if (!el) return;
   el.textContent = '';
   el.hidden = true;
+}
+
+function setLoginSuccess(message) {
+  const el = document.getElementById('login-success');
+  if (!el) return;
+  if (message) {
+    el.textContent = message;
+    el.hidden = false;
+  } else {
+    el.textContent = '';
+    el.hidden = true;
+  }
+}
+
+function showEmailVerifiedLoginBanner() {
+  setLoginSuccess('이메일 인증이 완료되었습니다. 로그인해 주세요.');
+  clearLoginError();
 }
 
 function escapeHtml(str) {
@@ -1031,18 +1062,32 @@ function normalizeCameraSubmitHooks(hooks) {
   return {};
 }
 
-async function finishBasicVideoInterviewSubmit(hooks) {
-  const ui = normalizeCameraSubmitHooks(hooks);
-  if (typeof getStoredAuthToken !== 'function' || !getStoredAuthToken()) {
-    if (!ui.silent) {
-      alert('로그인이 필요합니다.');
-      location.href = 'dashboard.html#login';
-    }
-    return { ok: false, message: 'LOGIN_REQUIRED' };
-  }
-  const sd = ui.sessionData || {};
-  let questionText = '기본 면접';
-  let answerText = '기본 면접 화면에서 제출한 연습 답변(텍스트·STT는 추후 연동 예정)';
+function isInvalidCameraAnswerText(text) {
+  const t = (text || '').trim();
+  if (!t) return true;
+  const markers = [
+    'STT는 추후',
+    '음성 인식 미연동',
+    '기본 면접 답변',
+    '실전 면접 답변',
+    '추후 연동 예정',
+    '기본 면접 화면에서 제출',
+  ];
+  return markers.some(function (m) {
+    return t.includes(m);
+  });
+}
+
+function slimVolumeSamplesForApi(samples) {
+  if (!Array.isArray(samples)) return [];
+  return samples.slice(-60).map(function (v) {
+    return Math.round(Number(v) * 1000) / 1000;
+  });
+}
+
+function buildCameraInterviewPayload(sd, fallbackQuestion) {
+  let questionText = fallbackQuestion || '면접';
+  let answerText = '';
   if (Array.isArray(sd.questionRecords) && sd.questionRecords.length) {
     questionText = sd.questionRecords
       .map(function (r, i) {
@@ -1054,34 +1099,73 @@ async function finishBasicVideoInterviewSubmit(hooks) {
         return '질문' + (i + 1) + ' 답변: ' + (r.answer || '');
       })
       .join('\n\n');
-  } else {
-    const labelEl = document.getElementById('vi-q-label');
-    const textEl = document.getElementById('vi-q-text');
-    const qLabel = (labelEl?.textContent || '').trim();
-    const qText = (textEl?.textContent || '').trim();
-    questionText = [qLabel, qText].filter(Boolean).join(' ').trim() || questionText;
   }
+  return {
+    questionText: questionText,
+    answerText: answerText.trim(),
+    transcript: answerText.trim(),
+    interviewType: 'camera',
+    durationSeconds:
+      sd.durationSeconds || (sd.elapsedMs ? Math.max(1, Math.round(sd.elapsedMs / 1000)) : null),
+    volumeSamples: slimVolumeSamplesForApi(sd.volumeSamples),
+    cameraAnalysis: sd.cameraAnalysis && typeof sd.cameraAnalysis === 'object' ? sd.cameraAnalysis : undefined,
+  };
+}
+
+async function finishBasicVideoInterviewSubmit(hooks) {
+  const ui = normalizeCameraSubmitHooks(hooks);
+  const token = typeof getStoredAuthToken === 'function' ? getStoredAuthToken() : null;
+  if (!token) {
+    const msg = '로그인이 만료되었습니다. 다시 로그인해 주세요.';
+    ui.onEnd?.();
+    if (!ui.silent) alert(msg);
+    location.href = 'login.html';
+    return { ok: false, message: 'LOGIN_REQUIRED' };
+  }
+  const sd = ui.sessionData || {};
+  const payload = buildCameraInterviewPayload(sd, '기본 면접');
+  if (!payload.answerText || isInvalidCameraAnswerText(payload.answerText)) {
+    const msg = '답변이 인식되지 않았습니다. 다시 답변해 주세요.';
+    ui.onEnd?.();
+    if (!ui.silent) alert(msg);
+    return { ok: false, message: msg };
+  }
+  console.log('[camera save payload]', {
+    question: payload.questionText?.slice(0, 60),
+    answerLength: payload.answerText.length,
+    durationSeconds: payload.durationSeconds,
+    volumeSampleCount: payload.volumeSamples?.length,
+    cameraAnalysisExists: !!payload.cameraAnalysis,
+    interviewType: payload.interviewType,
+  });
   try {
-    const res = await apiPostInterviewsBasic({ questionText, answerText });
+    const res = await apiPostInterviewsBasic(payload);
     const data = await res.json().catch(() => ({}));
     if (res.status === 401) {
       if (typeof clearStoredAuth === 'function') clearStoredAuth();
       ui.onEnd?.();
-      location.href = 'dashboard.html#login';
+      location.href = 'login.html';
       return { ok: false, message: 'UNAUTHORIZED' };
     }
     if (!res.ok) {
       ui.onEnd?.();
-      const msg = data.message || '저장에 실패했습니다.';
+      let msg = data.message || '저장에 실패했습니다.';
+      if (res.status === 413) {
+        msg = data.message || '전송 데이터가 너무 큽니다. 잠시 후 다시 시도해 주세요.';
+      }
       if (!ui.silent) alert(msg);
       return { ok: false, message: msg };
     }
-    const payload = Object.assign({}, data, {
+    console.log('[finishBasicVideoInterviewSubmit] response', {
+      overallScore: data.overallScore,
+      scores: data.scores,
+    });
+    const store = Object.assign({}, data, {
       questionRecords: sd.questionRecords || null,
       elapsedMs: sd.elapsedMs || null,
       questionCount: sd.questionCount || (sd.questionRecords ? sd.questionRecords.length : 5),
     });
-    sessionStorage.setItem('normalInterviewLastResult', JSON.stringify(payload));
+    sessionStorage.setItem('normalInterviewLastResult', JSON.stringify(store));
     location.href = 'normal-result.html';
     return { ok: true };
   } catch (e) {
@@ -1099,54 +1183,72 @@ async function finishBasicVideoInterviewSubmit(hooks) {
 
 async function finishRealInterviewSubmit(hooks) {
   const ui = normalizeCameraSubmitHooks(hooks);
-  if (typeof getStoredAuthToken !== 'function' || !getStoredAuthToken()) {
-    if (!ui.silent) {
-      alert('로그인이 필요합니다.');
-      location.href = 'dashboard.html#login';
-    }
+  const tokenReal = typeof getStoredAuthToken === 'function' ? getStoredAuthToken() : null;
+  if (!tokenReal) {
+    const msg = '로그인이 만료되었습니다. 다시 로그인해 주세요.';
+    ui.onEnd?.();
+    if (!ui.silent) alert(msg);
+    location.href = 'login.html';
     return { ok: false, message: 'LOGIN_REQUIRED' };
   }
   const sd = ui.sessionData || {};
-  let questionText = '실전 면접';
-  let answerText =
-    '실전 면접 화면에서 제출한 연습 답변(텍스트·STT는 추후 연동, 표정·자세·시선은 추후 카메라 AI 분석 API로 대체 예정)';
+  let payload = buildCameraInterviewPayload(sd, '실전 면접');
   if (Array.isArray(sd.questionRecords) && sd.questionRecords.length) {
-    questionText = sd.questionRecords
+    payload.questionText = sd.questionRecords
       .map(function (r, i) {
         const iv = r.interviewer || 1;
         return 'AI 면접관 ' + iv + ' 질문' + (i + 1) + ': ' + (r.question || '');
       })
       .join('\n');
-    answerText = sd.questionRecords
+    payload.answerText = sd.questionRecords
       .map(function (r, i) {
         return '질문' + (i + 1) + ' 답변: ' + (r.answer || '');
       })
       .join('\n\n');
-  } else {
-    const infoEl = document.getElementById('bi-q-info');
-    questionText = (infoEl?.textContent || '').trim() || questionText;
+    payload.transcript = payload.answerText;
   }
+  if (!payload.answerText || isInvalidCameraAnswerText(payload.answerText)) {
+    const msg = '답변이 인식되지 않았습니다. 다시 답변해 주세요.';
+    ui.onEnd?.();
+    if (!ui.silent) alert(msg);
+    return { ok: false, message: msg };
+  }
+  console.log('[camera save payload]', {
+    question: payload.questionText?.slice(0, 60),
+    answerLength: payload.answerText.length,
+    durationSeconds: payload.durationSeconds,
+    volumeSampleCount: payload.volumeSamples?.length,
+    cameraAnalysisExists: !!payload.cameraAnalysis,
+    interviewType: payload.interviewType,
+  });
   try {
-    const res = await apiPostInterviewsReal({ questionText, answerText });
+    const res = await apiPostInterviewsReal(payload);
     const data = await res.json().catch(() => ({}));
     if (res.status === 401) {
       if (typeof clearStoredAuth === 'function') clearStoredAuth();
       ui.onEnd?.();
-      location.href = 'dashboard.html#login';
+      location.href = 'login.html';
       return { ok: false, message: 'UNAUTHORIZED' };
     }
     if (!res.ok) {
       ui.onEnd?.();
-      const msg = data.message || '저장에 실패했습니다.';
+      let msg = data.message || '저장에 실패했습니다.';
+      if (res.status === 413) {
+        msg = data.message || '전송 데이터가 너무 큽니다. 잠시 후 다시 시도해 주세요.';
+      }
       if (!ui.silent) alert(msg);
       return { ok: false, message: msg };
     }
-    const payload = Object.assign({}, data, {
+    console.log('[finishRealInterviewSubmit] response', {
+      overallScore: data.overallScore,
+      scores: data.scores,
+    });
+    const store = Object.assign({}, data, {
       questionRecords: sd.questionRecords || null,
       elapsedMs: sd.elapsedMs || null,
       questionCount: sd.questionCount || (sd.questionRecords ? sd.questionRecords.length : 12),
     });
-    sessionStorage.setItem('basicInterviewLastResult', JSON.stringify(payload));
+    sessionStorage.setItem('basicInterviewLastResult', JSON.stringify(store));
     location.href = 'basic-result.html';
     return { ok: true };
   } catch (e) {
@@ -1245,10 +1347,20 @@ async function finishRealInterviewSubmit(hooks) {
 /** 회원가입 등에서 `dashboard.html#login`으로 온 경우 로그인 모달 자동 오픈 */
 (function initOpenLoginFromHash() {
   function tryOpen() {
-    if (window.location.hash !== '#login') return;
+    const hash = window.location.hash || '';
+    const params = new URLSearchParams(window.location.search);
+    const verified =
+      params.get('verified') === '1' ||
+      hash.indexOf('verified=1') !== -1;
+    if (verified) {
+      try {
+        sessionStorage.setItem('authEmailVerified', '1');
+      } catch (_) {}
+    }
+    if (hash.indexOf('login') === -1 && !verified) return;
     openLoginModal();
     try {
-      history.replaceState(null, '', window.location.pathname + window.location.search);
+      history.replaceState(null, '', window.location.pathname);
     } catch (_) {}
   }
   if (document.readyState === 'loading') {

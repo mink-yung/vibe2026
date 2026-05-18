@@ -198,23 +198,32 @@ function buildBasicResultFromRealApi(d) {
   const apiOverall = d.overallScore != null ? Number(d.overallScore) : null;
   const answerText = d.answerText || '';
   const seed = String(d.interviewId || 'real');
+  const metrics = d.metrics || null;
 
-  const attitudeBuilt =
-    typeof buildMetricDisplayList === 'function'
-      ? buildMetricDisplayList(REAL_ATTITUDE_DEFS, apiOverall ?? 72, {
-          answerText: answerText,
-          seed: seed + '-att',
-        })
-      : { items: [] };
+  let attitudeBuilt =
+    typeof metricItemsFromDeliveryApi === 'function' && metrics?.delivery
+      ? metricItemsFromDeliveryApi(metrics.delivery, REAL_ATTITUDE_DEFS)
+      : null;
+  let competencyBuilt =
+    typeof metricItemsFromCompetencyApi === 'function' && metrics?.competency
+      ? metricItemsFromCompetencyApi(metrics.competency, REAL_COMPETENCY_DEFS)
+      : null;
 
-  const competencyBuilt =
-    typeof buildMetricDisplayList === 'function'
-      ? buildMetricDisplayList(REAL_COMPETENCY_DEFS, apiOverall ?? 72, {
-          answerText: answerText,
-          seed: seed + '-comp',
-          includeMockNote: true,
-        })
-      : { items: [] };
+  if (!attitudeBuilt && typeof buildMetricDisplayList === 'function') {
+    attitudeBuilt = buildMetricDisplayList(REAL_ATTITUDE_DEFS, apiOverall ?? 72, {
+      answerText: answerText,
+      seed: seed + '-att',
+    });
+  }
+  if (!competencyBuilt && typeof buildMetricDisplayList === 'function') {
+    competencyBuilt = buildMetricDisplayList(REAL_COMPETENCY_DEFS, apiOverall ?? 72, {
+      answerText: answerText,
+      seed: seed + '-comp',
+      includeMockNote: true,
+    });
+  }
+  if (!attitudeBuilt) attitudeBuilt = { items: [] };
+  if (!competencyBuilt) competencyBuilt = { items: [] };
 
   const radar1 = typeof scoresToRadar10 === 'function' ? scoresToRadar10(competencyBuilt.items) : null;
   const radar2 = typeof scoresToRadar10 === 'function' ? scoresToRadar10(attitudeBuilt.items) : null;
@@ -242,17 +251,25 @@ function buildBasicResultFromRealApi(d) {
       '\ucd1d ' + formatDurationMs(d.elapsedMs) + '\uc5d0 \uba74\uc811\uc744 \uc644\ub8cc\ud588\uc2b5\ub2c8\ub2e4.';
   }
 
+  const fd = d.feedbackDetail || {};
+  const improvements = Array.isArray(fd.improvements) ? fd.improvements : [];
+  const recommends = improvements.length
+    ? improvements.map(function (t) { return { title: t }; })
+    : d.summary
+      ? [{ title: truncateText(d.summary, 120) }]
+      : null;
+
   return {
     subtitle: subtitle,
     radar1: radar1,
     radar2: radar2,
     feedback: {
-      summary: d.summary || '',
+      summary: fd.overall || d.summary || '',
       strengths: strengths.length ? strengths : null,
-      weaknesses: null,
-      recommends: d.summary
-        ? [{ title: truncateText(d.summary, 120) }]
+      weaknesses: fd.content
+        ? [{ title: '답변 내용', desc: truncateText(fd.content, 200) }]
         : null,
+      recommends: recommends,
     },
     personas: personas,
     questions: [{ title: d.questionText || '\uc9c8\ubb38', feedback: truncateText(d.summary, 500) }],

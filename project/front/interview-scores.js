@@ -170,6 +170,98 @@ function scoresToRadar10(metricItems) {
   return { labels, values, scores };
 }
 
+/** API metrics.delivery → 화면용 metric item 배열 */
+function metricItemsFromDeliveryApi(delivery, defs) {
+  if (!delivery || !defs) return null;
+  const keyMap = {
+    expression: 'expression',
+    intonation: 'intonation',
+    posture: 'postureStability',
+    speaking_speed: 'speakingSpeed',
+    gaze: 'eyeContact',
+  };
+  const items = defs.map(function (def) {
+    const apiKey = keyMap[def.key] || def.key;
+    const score = clampScore100(delivery[apiKey] ?? delivery[def.key]);
+    const ment = getScoreMent(score);
+    return {
+      key: def.key,
+      name: def.name,
+      icon: def.icon,
+      score: score,
+      color: getScoreColorClass(score),
+      ment: ment,
+      desc: ment || '',
+      scoreClass: score < 50 ? 'score-warn' : '',
+    };
+  });
+  return { items: items, average: averageScores(items.map(function (m) { return m.score; })) };
+}
+
+function metricItemsFromCompetencyApi(competency, defs) {
+  if (!competency || !defs) return null;
+  const items = defs.map(function (def) {
+    const score = clampScore100(competency[def.key] ?? competency.communication);
+    const ment = getScoreMent(score);
+    return {
+      key: def.key,
+      name: def.name,
+      icon: def.icon,
+      score: score,
+      color: getScoreColorClass(score),
+      ment: ment,
+      desc: ment || '',
+      scoreClass: score < 50 ? 'score-warn' : '',
+    };
+  });
+  return { items: items, average: averageScores(items.map(function (m) { return m.score; })) };
+}
+
+function metricItemsFromContentApi(content, defs) {
+  if (!content || !defs) return null;
+  const items = defs.map(function (def) {
+    const score = clampScore100(content[def.key] ?? content.communication);
+    const ment = getScoreMent(score);
+    return {
+      key: def.key,
+      name: def.name,
+      icon: def.icon,
+      score: score,
+      color: getScoreColorClass(score),
+      ment: ment,
+      desc: ment || '',
+      scoreClass: score < 50 ? 'score-warn' : '',
+    };
+  });
+  return { items: items, average: averageScores(items.map(function (m) { return m.score; })) };
+}
+
+function metricItemsFromScoresApi(scores) {
+  if (!scores) return null;
+  const defs = [
+    { key: 'content', name: '답변내용', icon: '💬' },
+    { key: 'voice', name: '음성전달', icon: '🎵' },
+    { key: 'eyeContact', name: '시선', icon: '👁' },
+    { key: 'posture', name: '자세·표정', icon: '🧍' },
+    { key: 'confidence', name: '자신감', icon: '💪' },
+  ];
+  const items = defs.map(function (def) {
+    const score = clampScore100(scores[def.key]);
+    const ment = getScoreMent(score);
+    return {
+      key: def.key,
+      name: def.name,
+      icon: def.icon,
+      score: score,
+      color: getScoreColorClass(score),
+      ment: ment,
+      desc: ment || '',
+      scoreClass: score < 50 ? 'score-warn' : '',
+    };
+  });
+  return { items: items, average: averageScores(items.map(function (m) { return m.score; })) };
+}
+
 function formatDurationMs(ms) {
   if (ms == null || ms <= 0) return '-';
   const sec = Math.floor(ms / 1000);

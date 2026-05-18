@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="quick-result.css" />
   <link rel="stylesheet" href="normal-result.css" />
   <link rel="stylesheet" href="basic-result.css" />
+  <link rel="stylesheet" href="mobile-responsive.css" />
 </head>
 <body>
 
@@ -310,11 +311,15 @@
     </div>
     <div class="modal-body">
       <form class="auth-form" id="loginForm" onsubmit="handleLoginSubmit(event)">
+        <div id="login-success" class="auth-alert auth-alert-success" role="status" hidden></div>
         <div id="login-error" class="auth-alert auth-alert-error" role="alert" hidden></div>
         <label class="auth-label" for="login-email">이메일</label>
         <input type="email" id="login-email" class="auth-input" name="email" autocomplete="email" required placeholder="you@example.com" oninput="clearLoginError()" />
         <label class="auth-label" for="login-password">비밀번호</label>
         <input type="password" id="login-password" class="auth-input" name="password" autocomplete="current-password" required placeholder="비밀번호" oninput="clearLoginError()" />
+        <p class="auth-forgot-row">
+          <a href="forgot-password.html" onclick="closeLoginModal()">비밀번호 찾기</a>
+        </p>
         <button type="submit" class="btn-primary auth-submit">로그인</button>
       </form>
       <p class="auth-switch">계정이 없으신가요? <a href="signup.html" onclick="closeLoginModal()">회원가입</a></p>

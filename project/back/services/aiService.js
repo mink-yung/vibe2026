@@ -170,6 +170,13 @@ function clampScore(value) {
   return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
 }
 
+export function buildSessionAudioMetrics({ transcript, durationSeconds, volumeSamples }) {
+  return {
+    speakingSpeed: calculateSpeakingSpeedScore({ transcript, durationSeconds }),
+    intonation: calculateIntonationScore({ volumeSamples }),
+  };
+}
+
 function calculateSpeakingSpeedScore({ transcript, durationSeconds }) {
   if (!transcript || !durationSeconds || durationSeconds <= 0) {
     return 70;
@@ -378,4 +385,197 @@ ${mode || "unknown"}
       reason: error.message,
     });
   }
+}
+
+function getCameraEvalFallback({ questionText, answerText, cameraAnalysis, reason }) {
+  const len = (answerText || "").trim().length;
+  const base = len < 20 ? 48 : len < 80 ? 62 : 72;
+  const cam = cameraAnalysis || {};
+  const scores = {
+    content: clampScore(base),
+    voice: clampScore(cam.intonation ?? base - 2),
+    eyeContact: clampScore(cam.eyeContact ?? base - 4),
+    posture: clampScore(cam.postureStability ?? base - 3),
+    confidence: clampScore(cam.expression ?? base - 1),
+  };
+  return {
+    scores,
+    feedback: {
+      content: "답변의 핵심 경험과 본인 기여를 조금 더 구체적으로 말하면 좋습니다.",
+      voice: "목소리 크기와 속도를 일정하게 유지해 보세요.",
+      eyeContact: "카메라 렌즈를 보며 답변하면 신뢰감이 높아집니다.",
+      posture: "어깨를 펴고 상체를 안정적으로 유지해 보세요.",
+      confidence: "결론을 분명히 말하고 마지막 문장을 또렷하게 마무리해 보세요.",
+      overall:
+        reason ||
+        "AI 평가 호출에 실패하여 참고용 피드백이 제공되었습니다. 답변은 저장되었습니다.",
+      improvements: [
+        "상황·행동·결과 구조로 답변하기",
+        "본인 역할과 성과를 숫자나 사례로 설명하기",
+      ],
+    },
+    summary: "면접 답변을 저장했으며, 참고용 피드백이 제공되었습니다.",
+    overallScore: clampScore(
+      (scores.content +
+        scores.voice +
+        scores.eyeContact +
+        scores.posture +
+        scores.confidence) /
+        5
+    ),
+  };
+}
+
+/**
+ * 카메라 면접 종합 평가 — 5개 항목 점수 + 항목별 피드백
+ */
+export async function generateCameraInterviewEvaluation({
+  mode,
+  questionText,
+  answerText,
+  cameraAnalysis,
+  speakingSpeed,
+  intonation,
+}) {
+  const cam = cameraAnalysis || {};
+  const speedScore =
+    speakingSpeed != null ? clampScore(speakingSpeed) : clampScore(cam.speakingSpeed ?? 70);
+  const voiceScore =
+    intonation != null ? clampScore(intonation) : clampScore(cam.intonation ?? 70);
+
+  if (!client) {
+    const fb = getCameraEvalFallback({
+      questionText,
+      answerText,
+      cameraAnalysis: {
+        ...cam,
+        speakingSpeed: speedScore,
+        intonation: voiceScore,
+      },
+      reason: "OPENAI_API_KEY가 없습니다.",
+    });
+    return mapCameraEvalToMetrics(fb, cam, speedScore, voiceScore);
+  }
+
+  const visualHint = cam.expression
+    ? `표정(화면 관찰): ${cam.expression}, 시선: ${cam.eyeContact}, 자세: ${cam.postureStability}`
+    : "카메라 시각 분석 없음";
+
+  const input = `
+${systemPrompt}
+
+너는 AI 면접 연습 서비스의 평가자다. 아래 면접 답변과 카메라·음성 참고 정보를 바탕으로 평가해라.
+
+면접 모드: ${mode || "basic"}
+질문:
+${questionText || "질문 없음"}
+
+지원자 답변:
+${answerText}
+
+참고(카메라·음성, 0~100):
+- ${visualHint}
+- 말하기 속도 점수(서버 계산): ${speedScore}
+- 음성 전달력/억양 점수(서버 계산): ${voiceScore}
+
+반드시 아래 JSON만 응답해라. 각 점수는 서로 다르게 평가해라(모두 같은 숫자 금지).
+
+{
+  "scores": {
+    "content": 0-100,
+    "voice": 0-100,
+    "eyeContact": 0-100,
+    "posture": 0-100,
+    "confidence": 0-100
+  },
+  "feedback": {
+    "content": "답변 내용 평가 2~4문장",
+    "voice": "음성 전달력 평가 2~3문장",
+    "eyeContact": "시선 처리 평가 2~3문장",
+    "posture": "자세·표정 평가 2~3문장",
+    "confidence": "자신감 평가 2~3문장",
+    "overall": "종합 피드백 2~4문장",
+    "improvements": ["개선점1", "개선점2"]
+  },
+  "summary": "한 줄 요약",
+  "overallScore": 0-100
+}
+`;
+
+  try {
+    const response = await client.responses.create({
+      model: "gpt-5.4-mini",
+      input,
+    });
+    const text = extractJsonText(response.output_text || "");
+    const parsed = JSON.parse(text);
+    const scores = {
+      content: clampScore(parsed.scores?.content ?? 70),
+      voice: clampScore(parsed.scores?.voice ?? voiceScore),
+      eyeContact: clampScore(parsed.scores?.eyeContact ?? cam.eyeContact ?? 70),
+      posture: clampScore(parsed.scores?.posture ?? cam.postureStability ?? 70),
+      confidence: clampScore(parsed.scores?.confidence ?? cam.expression ?? 70),
+    };
+    const evalResult = {
+      scores,
+      feedback: {
+        content: parsed.feedback?.content || "",
+        voice: parsed.feedback?.voice || "",
+        eyeContact: parsed.feedback?.eyeContact || "",
+        posture: parsed.feedback?.posture || "",
+        confidence: parsed.feedback?.confidence || "",
+        overall: parsed.feedback?.overall || "",
+        improvements: Array.isArray(parsed.feedback?.improvements)
+          ? parsed.feedback.improvements
+          : [],
+      },
+      summary: parsed.summary || "면접 평가가 완료되었습니다.",
+      overallScore: clampScore(
+        parsed.overallScore ??
+          (scores.content +
+            scores.voice +
+            scores.eyeContact +
+            scores.posture +
+            scores.confidence) /
+            5
+      ),
+    };
+    return mapCameraEvalToMetrics(evalResult, cam, speedScore, voiceScore);
+  } catch (error) {
+    console.error("카메라 면접 종합 평가 실패:", error.message);
+    const fb = getCameraEvalFallback({
+      questionText,
+      answerText,
+      cameraAnalysis: cam,
+      reason: error.message,
+    });
+    return mapCameraEvalToMetrics(fb, cam, speedScore, voiceScore);
+  }
+}
+
+function mapCameraEvalToMetrics(evalResult, cameraAnalysis, speakingSpeed, intonation) {
+  const s = evalResult.scores;
+  const logicOffset = (s.content % 11) - 5;
+  const logic = clampScore(Math.max(0, Math.min(100, s.content + logicOffset)));
+  return {
+    ...evalResult,
+    deliveryMetrics: {
+      expression: clampScore(cameraAnalysis?.expression ?? s.confidence),
+      intonation: clampScore(intonation),
+      postureStability: clampScore(s.posture),
+      speakingSpeed: clampScore(speakingSpeed),
+      eyeContact: clampScore(s.eyeContact),
+    },
+    contentMetrics: {
+      communication: clampScore(s.content),
+      logic,
+    },
+    competencyMetrics: {
+      communication: clampScore(s.content),
+      logic,
+      problem_solving: clampScore(Math.round((s.content + s.confidence) / 2)),
+      confidence: clampScore(s.confidence),
+      job_fit: clampScore(Math.round((s.content + s.voice) / 2)),
+    },
+  };
 }

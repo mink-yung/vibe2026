@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>회원가입 · AI 면접 준비 플랫폼</title>
   <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="mobile-responsive.css" />
 </head>
 <body>
   <div class="auth-page">
@@ -33,11 +34,26 @@
 
         <button type="submit" class="btn-primary auth-submit">가입하기</button>
       </form>
-      <p class="auth-switch">이미 계정이 있으신가요? <a href="dashboard.html#login">로그인</a></p>
+      <p class="auth-switch">이미 계정이 있으신가요? <a href="login.html">로그인</a></p>
     </div>
   </div>
+
+  <div class="modal-overlay" id="signupSuccessModal" role="dialog" aria-labelledby="signupSuccessTitle" hidden>
+    <div class="modal-box modal-box-auth" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title" id="signupSuccessTitle">회원가입 안내</span>
+      </div>
+      <div class="modal-body">
+        <p class="auth-modal-message" id="signupSuccessMessage"></p>
+        <button type="button" class="btn-primary auth-submit" id="signupSuccessOk">확인</button>
+      </div>
+    </div>
+  </div>
+
   <script src="api.js"></script>
   <script>
+    var lastSignupEmail = '';
+
     function getSignupErrorEl() {
       return document.getElementById('signup-error');
     }
@@ -45,7 +61,7 @@
       var el = getSignupErrorEl();
       if (!el) return;
       el.textContent = msg || '가입에 실패했습니다.';
-      el.hidden = false;
+      el.hidden = !msg;
     }
     function clearSignupError() {
       var el = getSignupErrorEl();
@@ -54,12 +70,33 @@
       el.hidden = true;
     }
     function pickSignupErrorMessage(data) {
-      if (!data || typeof data !== 'object') return '가입 요청을 처리할 수 없습니다.';
-      if (typeof data.message === 'string' && data.message.trim()) return data.message.trim();
-      if (typeof data.detail === 'string' && data.detail.trim()) return data.detail.trim();
-      if (typeof data.error === 'string' && data.error.trim()) return data.error.trim();
-      return '가입 요청을 처리할 수 없습니다.';
+      return pickApiMessage(data, '가입 요청을 처리할 수 없습니다.');
     }
+
+    function openSignupSuccessModal(email) {
+      var modal = document.getElementById('signupSuccessModal');
+      var msgEl = document.getElementById('signupSuccessMessage');
+      if (!modal || !msgEl) return;
+      msgEl.textContent =
+        email + ' 로 보낸 메일을 이용해 인증 후 로그인해주세요.';
+      modal.hidden = false;
+      modal.classList.add('open');
+    }
+
+    function closeSignupSuccessModal() {
+      var modal = document.getElementById('signupSuccessModal');
+      if (modal) {
+        modal.classList.remove('open');
+        modal.hidden = true;
+      }
+      location.href = 'login.html';
+    }
+
+    document.getElementById('signupSuccessOk').addEventListener('click', closeSignupSuccessModal);
+    document.getElementById('signupSuccessModal').addEventListener('click', function (e) {
+      if (e.target.id === 'signupSuccessModal') closeSignupSuccessModal();
+    });
+
     async function handleSignupSubmit(e) {
       e.preventDefault();
       clearSignupError();
@@ -83,16 +120,23 @@
         var data = await response.json().catch(function () { return {}; });
         if (!response.ok) {
           setSignupError(pickSignupErrorMessage(data));
+          if (response.status >= 500) {
+            alert(pickSignupErrorMessage(data));
+          }
           return;
         }
         if (data && data.success === false) {
           setSignupError(pickSignupErrorMessage(data));
           return;
         }
-        location.href = 'dashboard.html#login';
+        lastSignupEmail = email;
+        document.getElementById('signupForm').reset();
+        openSignupSuccessModal(email);
       } catch (err) {
         console.error(err);
-        setSignupError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+        var errMsg = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.';
+        setSignupError(errMsg);
+        alert(errMsg);
       } finally {
         if (submitBtn) submitBtn.disabled = false;
       }

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로그인 · AI 면접 준비 플랫폼</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="mobile-responsive.css" />
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <button type="button" class="auth-back" onclick="location.href='dashboard.html'">← 대시보드로</button>
+      <h1 class="auth-card-title">로그인</h1>
+      <p class="auth-card-desc">이메일과 비밀번호로 로그인하세요.</p>
+      <form class="auth-form" id="loginForm" onsubmit="handleLoginPageSubmit(event)">
+        <div id="login-page-error" class="auth-alert auth-alert-error" role="alert" hidden></div>
+        <label class="auth-label" for="login-page-email">이메일</label>
+        <input type="email" id="login-page-email" class="auth-input" name="email" autocomplete="email" required placeholder="you@example.com" />
+        <label class="auth-label" for="login-page-password">비밀번호</label>
+        <input type="password" id="login-page-password" class="auth-input" name="password" autocomplete="current-password" required placeholder="비밀번호" />
+        <p class="auth-forgot-row">
+          <a href="forgot-password.html">비밀번호 찾기</a>
+        </p>
+        <button type="submit" class="btn-primary auth-submit">로그인</button>
+      </form>
+      <p class="auth-switch">계정이 없으신가요? <a href="signup.html">회원가입</a></p>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="verifiedModal" role="dialog" aria-labelledby="verifiedModalTitle" hidden>
+    <div class="modal-box modal-box-auth" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title" id="verifiedModalTitle">이메일 인증 완료</span>
+      </div>
+      <div class="modal-body">
+        <p class="auth-modal-message">이메일 인증이 완료되었습니다. 로그인해주세요.</p>
+        <button type="button" class="btn-primary auth-submit" id="verifiedModalOk">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    function setLoginPageError(msg) {
+      var el = document.getElementById('login-page-error');
+      if (!el) return;
+      if (msg) {
+        el.textContent = msg;
+        el.hidden = false;
+      } else {
+        el.textContent = '';
+        el.hidden = true;
+      }
+    }
+
+    function closeVerifiedModal() {
+      var modal = document.getElementById('verifiedModal');
+      if (!modal) return;
+      modal.classList.remove('open');
+      modal.hidden = true;
+      try {
+        var url = new URL(window.location.href);
+        url.searchParams.delete('verified');
+        history.replaceState(null, '', url.pathname + (url.search || ''));
+      } catch (_) {}
+    }
+
+    function openVerifiedModalIfNeeded() {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('verified') !== '1') return;
+      var modal = document.getElementById('verifiedModal');
+      if (!modal) return;
+      modal.hidden = false;
+      modal.classList.add('open');
+    }
+
+    document.getElementById('verifiedModalOk').addEventListener('click', closeVerifiedModal);
+    document.getElementById('verifiedModal').addEventListener('click', function (e) {
+      if (e.target.id === 'verifiedModal') closeVerifiedModal();
+    });
+
+    async function handleLoginPageSubmit(e) {
+      e.preventDefault();
+      setLoginPageError('');
+      var email = document.getElementById('login-page-email').value.trim();
+      var password = document.getElementById('login-page-password').value;
+      var submitBtn = e.target.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+      try {
+        var res = await apiPostAuthLogin({ email: email, password: password });
+        var data = await res.json().catch(function () { return {}; });
+        if (!res.ok || data.success === false) {
+          setLoginPageError(pickApiMessage(data, '이메일 또는 비밀번호를 확인해 주세요.'));
+          return;
+        }
+        if (!data.token) {
+          setLoginPageError('로그인 응답에 토큰이 없습니다.');
+          return;
+        }
+        saveAuthToStorage(data.token, data.user);
+        location.href = 'dashboard.html';
+      } catch (err) {
+        console.error(err);
+        setLoginPageError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    }
+
+    openVerifiedModalIfNeeded();
+  </script>
+</body>
+</html>

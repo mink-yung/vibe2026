@@ -1,5 +1,9 @@
 * { box-sizing: border-box; }
-body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; }
+body {
+  margin: 0;
+  font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f8f9fa;
+}
 .sidebar { width: 200px; min-height: 100vh; background: #fff; border-right: 1px solid #e9ecef; display: flex; flex-direction: column; padding: 20px 12px; position: fixed; top: 0; left: 0; bottom: 0; }
 .logo-box { padding: 7px 14px; font-size: 13px; font-weight: 700; color: #212529; display: flex; align-items: center; margin-bottom: 24px; }
 .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #6c757d; cursor: pointer; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left; }
@@ -199,6 +203,7 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 .auth-switch a:hover { text-decoration: underline; }
 .auth-alert { font-size: 13px; line-height: 1.5; padding: 10px 12px; border-radius: 8px; margin-bottom: 4px; }
 .auth-alert-error { background: #fff5f5; color: #c92a2a; border: 1px solid #ffc9c9; }
+.auth-alert-success { background: #ebfbee; color: #2b8a3e; border: 1px solid #b2f2bb; }
 .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: #f8f9fa; }
 .auth-card { width: 100%; max-width: 420px; background: #fff; border-radius: 16px; padding: 32px 28px 28px; box-shadow: 0 1px 6px rgba(0,0,0,0.07); border: 1px solid #f1f3f5; }
 .auth-card-title { font-size: 22px; font-weight: 800; color: #212529; margin: 0 0 8px; }
@@ -207,6 +212,11 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sa
 .auth-back:hover { color: #1971c2; }
 .auth-check { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; font-size: 12.5px; color: #495057; line-height: 1.5; }
 .auth-check input { margin-top: 3px; }
+.auth-forgot-row { text-align: right; margin: 4px 0 8px; }
+.auth-forgot-row a { font-size: 13px; color: #1971c2; font-weight: 600; text-decoration: none; }
+.auth-forgot-row a:hover { text-decoration: underline; }
+.auth-modal-message { font-size: 14px; line-height: 1.65; color: #343a40; margin: 0 0 20px; }
+.modal-overlay[hidden] { display: none !important; }
 
 /* 모의면접 섹션 */
 .mock-page { padding: 28px 36px; }

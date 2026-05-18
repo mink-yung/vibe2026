@@ -3,8 +3,98 @@ import { pool } from "../config/db.js";
 import { authRequired } from "../middleware/authMiddleware.js";
 import {
   generateInterviewFeedback,
-  generateCameraAnalysis
+  generateCameraAnalysis,
+  generateCameraInterviewEvaluation,
+  buildSessionAudioMetrics,
 } from "../services/aiService.js";
+import { appLog, appLogError } from "../utils/appLog.js";
+
+const PLACEHOLDER_ANSWER_MARKERS = [
+  "STT는 추후",
+  "음성 인식 미연동",
+  "기본 면접 답변",
+  "실전 면접 답변",
+  "추후 연동 예정",
+  "기본 면접 화면에서 제출",
+];
+
+function normalizeAnswerText(body) {
+  const raw = body?.answerText ?? body?.transcript ?? "";
+  return typeof raw === "string" ? raw.trim() : "";
+}
+
+function isPlaceholderAnswer(text) {
+  if (!text) return true;
+  return PLACEHOLDER_ANSWER_MARKERS.some((m) => text.includes(m));
+}
+
+async function saveCameraInterviewExtras({
+  interviewId,
+  userId,
+  mode,
+  questionText,
+  answerText,
+  cameraAnalysis: cameraAnalysisInput,
+  durationSeconds,
+  volumeSamples,
+}) {
+  const safeVolume = Array.isArray(volumeSamples)
+    ? volumeSamples.slice(-60).map((v) => Number(v) || 0)
+    : [];
+
+  let cameraAnalysis = null;
+  if (cameraAnalysisInput && typeof cameraAnalysisInput === "object" && !Array.isArray(cameraAnalysisInput)) {
+    cameraAnalysis = cameraAnalysisInput;
+  } else {
+    cameraAnalysis = buildSessionAudioMetrics({
+      transcript: answerText,
+      durationSeconds,
+      volumeSamples: safeVolume,
+    });
+  }
+
+  const evaluation = await generateCameraInterviewEvaluation({
+    mode,
+    questionText,
+    answerText,
+    cameraAnalysis,
+    speakingSpeed: cameraAnalysis?.speakingSpeed,
+    intonation: cameraAnalysis?.intonation,
+  });
+
+  appLog("camera interview scores parsed", {
+    interviewId,
+    scores: evaluation.scores,
+  });
+
+  const metrics = {
+    scores: evaluation.scores,
+    delivery: evaluation.deliveryMetrics,
+    content: evaluation.contentMetrics,
+    competency: evaluation.competencyMetrics,
+    feedback: evaluation.feedback,
+  };
+
+  await pool.execute(
+    `UPDATE interviews
+     SET camera_analysis_json = ?,
+         metrics_json = ?,
+         summary = ?,
+         overall_score = ?
+     WHERE id = ?
+       AND user_id = ?`,
+    [
+      cameraAnalysis ? JSON.stringify(cameraAnalysis) : null,
+      JSON.stringify(metrics),
+      evaluation.summary,
+      evaluation.overallScore,
+      interviewId,
+      userId,
+    ]
+  );
+
+  return { cameraAnalysis, evaluation, metrics };
+}
 
 const router = express.Router();
 
@@ -187,35 +277,62 @@ router.post("/quick/audio", async (req, res) => {
 // POST /api/interviews/basic
 router.post("/basic", async (req, res) => {
   try {
-    const { questionText, answerText } = req.body;
+    const { questionText, durationSeconds, volumeSamples, cameraAnalysis, interviewType } =
+      req.body;
     const userId = req.user.id;
+    const finalAnswerText = normalizeAnswerText(req.body);
 
-    if (!questionText || !answerText) {
+    console.log("[camera save] user:", userId);
+    console.log("[camera save] question:", questionText?.slice?.(0, 80));
+    console.log("[camera save] answer length:", finalAnswerText.length);
+    console.log("[camera save] interviewType:", interviewType || "basic");
+    console.log("[camera save] cameraAnalysis exists:", !!cameraAnalysis);
+
+    appLog("POST /basic", {
+      answerLen: finalAnswerText.length,
+      interviewType: interviewType || "camera",
+    });
+
+    if (!questionText || !String(questionText).trim()) {
       return res.status(400).json({
         success: false,
-        message: "questionText와 answerText가 필요합니다."
+        message: "questionText가 필요합니다.",
+      });
+    }
+
+    if (!finalAnswerText) {
+      return res.status(400).json({
+        success: false,
+        message: "답변 내용이 없어 저장할 수 없습니다.",
+      });
+    }
+
+    if (isPlaceholderAnswer(finalAnswerText)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "답변 텍스트가 비어 있거나 인식되지 않았습니다. 다시 답변해 주세요.",
       });
     }
 
     const aiResult = await generateInterviewFeedback({
       persona: "friendly",
       questionText,
-      answerText
+      answerText: finalAnswerText,
     });
-    
-    const feedbackData = {
-      feedback: aiResult.feedback,
-      nextQuestion: aiResult.nextQuestion
-    };
-    
-    const summary = aiResult.summary;
-    const overallScore = aiResult.overallScore;
 
     const [interviewResult] = await pool.execute(
       `INSERT INTO interviews 
        (user_id, mode, question_text, answer_text, summary, overall_score)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [userId, "basic", questionText, answerText, summary, overallScore]
+      [
+        userId,
+        "basic",
+        questionText,
+        finalAnswerText,
+        aiResult.summary,
+        aiResult.overallScore,
+      ]
     );
 
     const interviewId = interviewResult.insertId;
@@ -224,8 +341,23 @@ router.post("/basic", async (req, res) => {
       `INSERT INTO interview_feedbacks
        (interview_id, persona, feedback, next_question)
        VALUES (?, ?, ?, ?)`,
-      [interviewId, "friendly", feedbackData.feedback, feedbackData.nextQuestion]
+      [interviewId, "friendly", aiResult.feedback, aiResult.nextQuestion]
     );
+
+    const { evaluation, metrics, cameraAnalysis: savedCameraAnalysis } =
+      await saveCameraInterviewExtras({
+        interviewId,
+        userId,
+        mode: "basic",
+        questionText,
+        answerText: finalAnswerText,
+        cameraAnalysis,
+        durationSeconds,
+        volumeSamples,
+      });
+
+    console.log("[camera save] scores:", evaluation.scores);
+    appLog("basic interview saved", { interviewId, overallScore: evaluation.overallScore });
 
     return res.status(201).json({
       success: true,
@@ -233,18 +365,23 @@ router.post("/basic", async (req, res) => {
       mode: "basic",
       persona: "friendly",
       questionText,
-      answerText,
-      feedback: feedbackData.feedback,
-      nextQuestion: feedbackData.nextQuestion,
-      summary,
-      overallScore
+      answerText: finalAnswerText,
+      feedback: evaluation.feedback?.overall || aiResult.feedback,
+      nextQuestion: aiResult.nextQuestion,
+      summary: evaluation.summary,
+      overallScore: evaluation.overallScore,
+      scores: evaluation.scores,
+      metrics,
+      cameraAnalysis: savedCameraAnalysis,
+      feedbackDetail: evaluation.feedback,
     });
   } catch (error) {
-    console.error("기본면접 저장 오류:", error);
+    console.error("[camera save] basic error:", error);
+    appLogError("기본면접 저장 오류", { message: error.message });
 
     return res.status(500).json({
       success: false,
-      message: "서버 오류가 발생했습니다."
+      message: "서버 오류가 발생했습니다.",
     });
   }
 });
@@ -318,65 +455,102 @@ router.post("/basic/audio", async (req, res) => {
 // POST /api/interviews/real
 router.post("/real", async (req, res) => {
   try {
-    const { questionText, answerText } = req.body;
+    const { questionText, durationSeconds, volumeSamples, cameraAnalysis, interviewType } =
+      req.body;
     const userId = req.user.id;
+    const finalAnswerText = normalizeAnswerText(req.body);
 
-    if (!questionText || !answerText) {
+    console.log("[camera save] user:", userId);
+    console.log("[camera save] question:", questionText?.slice?.(0, 80));
+    console.log("[camera save] answer length:", finalAnswerText.length);
+    console.log("[camera save] interviewType:", interviewType || "real");
+    console.log("[camera save] cameraAnalysis exists:", !!cameraAnalysis);
+
+    appLog("POST /real", {
+      answerLen: finalAnswerText.length,
+      interviewType: interviewType || "camera",
+    });
+
+    if (!questionText || !String(questionText).trim()) {
       return res.status(400).json({
         success: false,
-        message: "questionText와 answerText가 필요합니다."
+        message: "questionText가 필요합니다.",
+      });
+    }
+
+    if (!finalAnswerText) {
+      return res.status(400).json({
+        success: false,
+        message: "답변 내용이 없어 저장할 수 없습니다.",
+      });
+    }
+
+    if (isPlaceholderAnswer(finalAnswerText)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "답변 텍스트가 비어 있거나 인식되지 않았습니다. 다시 답변해 주세요.",
       });
     }
 
     const friendlyResult = await generateInterviewFeedback({
       persona: "friendly",
       questionText,
-      answerText
+      answerText: finalAnswerText,
     });
-    
+
     const sharpResult = await generateInterviewFeedback({
       persona: "sharp",
       questionText,
-      answerText
+      answerText: finalAnswerText,
     });
-    
+
     const pressureResult = await generateInterviewFeedback({
       persona: "pressure",
       questionText,
-      answerText
+      answerText: finalAnswerText,
     });
-    
-    const summary = friendlyResult.summary;
-    const overallScore = Math.round(
-      (friendlyResult.overallScore + sharpResult.overallScore + pressureResult.overallScore) / 3
-    );
-    
+
     const feedbacks = [
       {
         persona: "friendly",
         name: "친절한 면접관",
         feedback: friendlyResult.feedback,
-        nextQuestion: friendlyResult.nextQuestion
+        nextQuestion: friendlyResult.nextQuestion,
       },
       {
         persona: "sharp",
         name: "까칠한 면접관",
         feedback: sharpResult.feedback,
-        nextQuestion: sharpResult.nextQuestion
+        nextQuestion: sharpResult.nextQuestion,
       },
       {
         persona: "pressure",
         name: "압박 면접관",
         feedback: pressureResult.feedback,
-        nextQuestion: pressureResult.nextQuestion
-      }
+        nextQuestion: pressureResult.nextQuestion,
+      },
     ];
+
+    const personaAvg = Math.round(
+      (friendlyResult.overallScore +
+        sharpResult.overallScore +
+        pressureResult.overallScore) /
+        3
+    );
 
     const [interviewResult] = await pool.execute(
       `INSERT INTO interviews 
        (user_id, mode, question_text, answer_text, summary, overall_score)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [userId, "real", questionText, answerText, summary, overallScore]
+      [
+        userId,
+        "real",
+        questionText,
+        finalAnswerText,
+        friendlyResult.summary,
+        personaAvg,
+      ]
     );
 
     const interviewId = interviewResult.insertId;
@@ -390,22 +564,42 @@ router.post("/real", async (req, res) => {
       );
     }
 
+    const { evaluation, metrics, cameraAnalysis: savedCameraAnalysis } =
+      await saveCameraInterviewExtras({
+        interviewId,
+        userId,
+        mode: "real",
+        questionText,
+        answerText: finalAnswerText,
+        cameraAnalysis,
+        durationSeconds,
+        volumeSamples,
+      });
+
+    console.log("[camera save] scores:", evaluation.scores);
+    appLog("real interview saved", { interviewId, overallScore: evaluation.overallScore });
+
     return res.status(201).json({
       success: true,
       interviewId,
       mode: "real",
       questionText,
-      answerText,
+      answerText: finalAnswerText,
       feedbacks,
-      summary,
-      overallScore
+      summary: evaluation.summary,
+      overallScore: evaluation.overallScore,
+      scores: evaluation.scores,
+      metrics,
+      cameraAnalysis: savedCameraAnalysis,
+      feedbackDetail: evaluation.feedback,
     });
   } catch (error) {
-    console.error("실전면접 저장 오류:", error);
+    console.error("[camera save] real error:", error);
+    appLogError("실전면접 저장 오류", { message: error.message });
 
     return res.status(500).json({
       success: false,
-      message: "서버 오류가 발생했습니다."
+      message: "서버 오류가 발생했습니다.",
     });
   }
 });
