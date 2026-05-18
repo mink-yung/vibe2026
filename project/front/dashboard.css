@@ -1,5 +1,9 @@
 * { box-sizing: border-box; }
-body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; }
+body {
+  margin: 0;
+  font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f8f9fa;
+}
 .sidebar { width: 200px; min-height: 100vh; background: #fff; border-right: 1px solid #e9ecef; display: flex; flex-direction: column; padding: 20px 12px; position: fixed; top: 0; left: 0; bottom: 0; }
 .logo-box { padding: 7px 14px; font-size: 13px; font-weight: 700; color: #212529; display: flex; align-items: center; margin-bottom: 24px; }
 .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #6c757d; cursor: pointer; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left; }

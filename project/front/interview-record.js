@@ -215,11 +215,103 @@ function mapHistoryToRecordData(history) {
   };
 }
 
+/** 상세 화면용 질문-답변 쌍 (DB에 합쳐 저장된 문자열도 파싱) */
+function buildInterviewQaPairs(interview) {
+  const iv = interview || {};
+  if (Array.isArray(iv.qaPairs) && iv.qaPairs.length) {
+    return iv.qaPairs.map(function (p, i) {
+      return {
+        index: i + 1,
+        question: p.question || p.questionText || '',
+        answer: p.answer || p.answerText || '답변 기록 없음',
+      };
+    });
+  }
+  if (Array.isArray(iv.questionRecords) && iv.questionRecords.length) {
+    return iv.questionRecords.map(function (r, i) {
+      return {
+        index: i + 1,
+        question: r.question || '',
+        answer: r.answer || r.answerText || '답변 기록 없음',
+      };
+    });
+  }
+
+  const qRaw = (iv.questionText || '').trim();
+  const aRaw = (iv.answerText || '').trim();
+  if (!qRaw && !aRaw) {
+    return [];
+  }
+
+  const answerBlocks = aRaw ? aRaw.split(/\n\n+/).filter(Boolean) : [];
+  const questionLines = qRaw ? qRaw.split(/\n/).filter(Boolean) : [];
+
+  if (answerBlocks.length > 1 || questionLines.length > 1) {
+    const count = Math.max(answerBlocks.length, questionLines.length, 1);
+    const pairs = [];
+    for (let i = 0; i < count; i++) {
+      let q = questionLines[i] || '';
+      let a = answerBlocks[i] || '';
+      q = q
+        .replace(/^질문\s*\d+\s*:\s*/i, '')
+        .replace(/^AI\s*면접관\s*\d+\s*질문\s*\d+\s*:\s*/i, '')
+        .trim();
+      a = a.replace(/^질문\s*\d+\s*답변\s*:\s*/i, '').trim();
+      pairs.push({
+        index: i + 1,
+        question: q || '-',
+        answer: a || '답변 기록 없음',
+      });
+    }
+    return pairs;
+  }
+
+  return [
+    {
+      index: 1,
+      question: qRaw || '-',
+      answer: aRaw || '답변 기록 없음',
+    },
+  ];
+}
+
+function renderQaPairsHtml(pairs) {
+  if (!pairs || !pairs.length) {
+    return '<p class="ir-detail-value">질문·답변 기록이 없습니다.</p>';
+  }
+  return (
+    '<div class="qa-pair-list">' +
+    pairs
+      .map(function (p) {
+        return (
+          '<div class="qa-pair-card">' +
+          '<div class="question-label">질문 ' +
+          escHtml(String(p.index)) +
+          '</div>' +
+          '<p class="question-text">' +
+          escHtml(p.question || '-') +
+          '</p>' +
+          '<div class="answer-label">답변 ' +
+          escHtml(String(p.index)) +
+          '</div>' +
+          '<p class="answer-text">' +
+          escHtml(p.answer || '답변 기록 없음') +
+          '</p>' +
+          '</div>'
+        );
+      })
+      .join('') +
+    '</div>'
+  );
+}
+
 function renderDetailModalContent(interview) {
   const iv = interview || {};
   const dt = formatRecordDate(iv.createdAt);
   const score = iv.overallScore != null ? Number(iv.overallScore) : null;
   const feedbacks = Array.isArray(iv.feedbacks) ? iv.feedbacks : [];
+  const qaPairs = buildInterviewQaPairs(iv);
+  const qaHtml = renderQaPairsHtml(qaPairs);
 
   const feedbackHtml = feedbacks.length
     ? feedbacks
@@ -253,13 +345,9 @@ function renderDetailModalContent(interview) {
       <div class="ir-detail-label">점수</div>
       <div class="ir-detail-value">${score != null && !Number.isNaN(score) ? escHtml(score) + '점' : '-'}</div>
     </div>
-    <div class="ir-detail-field">
-      <div class="ir-detail-label">질문</div>
-      <div class="ir-detail-value">${escHtml(iv.questionText || '-')}</div>
-    </div>
-    <div class="ir-detail-field">
-      <div class="ir-detail-label">답변</div>
-      <div class="ir-detail-value">${escHtml(iv.answerText || '-')}</div>
+    <div class="ir-detail-field ir-detail-qa">
+      <div class="ir-detail-label">질문 · 답변</div>
+      ${qaHtml}
     </div>
     <div class="ir-detail-field">
       <div class="ir-detail-label">요약</div>

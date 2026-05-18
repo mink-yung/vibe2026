@@ -42,6 +42,7 @@ function getCameraInterviewState(cfg) {
       volumeSamples: [],
       recognition: null,
       isListening: false,
+      shouldRestartRecognition: false,
       audioContext: null,
       volumeIntervalId: null,
     });
@@ -203,12 +204,17 @@ function createCameraRecognition(cfg) {
   };
 
   r.onend = function () {
-    if (state.isListening && state.recognition === r) {
+    if (
+      state.shouldRestartRecognition &&
+      state.isListening &&
+      state.recognition === r
+    ) {
       try {
         r.start();
-        console.log('[camera-interview] recognition restarted');
+        console.log('[camera interview] recognition restarted');
       } catch (_) {
         state.isListening = false;
+        state.shouldRestartRecognition = false;
         updateCameraInterviewUi(cfg);
       }
     }
@@ -226,12 +232,13 @@ function startCameraRecognition(cfg) {
   setCamError(cfg, null);
   state.recognitionFinalBuffer = '';
   state.currentTranscript = '';
+  state.shouldRestartRecognition = true;
   state.recognition = createCameraRecognition(cfg);
   if (!state.recognition) return false;
   try {
     state.recognition.start();
     state.isListening = true;
-    console.log('[camera-interview] recognition started');
+    console.log('[camera interview] recognition started, question index:', state.currentQuestionIndex);
     updateLiveTranscript(cfg);
     return true;
   } catch (e) {
@@ -244,6 +251,7 @@ function startCameraRecognition(cfg) {
 function stopCameraRecognition(cfg, options) {
   const opts = options || {};
   const state = getCameraInterviewState(cfg);
+  state.shouldRestartRecognition = false;
   state.isListening = false;
   const active = state.recognition;
   state.recognition = null;
@@ -266,13 +274,36 @@ function stopCameraRecognition(cfg, options) {
 }
 
 function commitCurrentTranscript(cfg) {
+  stopCameraRecognition(cfg, { keepResults: true });
   const state = getCameraInterviewState(cfg);
   const text = (state.currentTranscript || state.recognitionFinalBuffer || '').trim();
   state.recognitionFinalBuffer = '';
   state.currentTranscript = '';
   updateLiveTranscript(cfg);
-  console.log('[camera-interview] transcript committed', text.length, 'chars');
+  console.log('[camera interview] final answer:', text.slice(0, 120));
   return text;
+}
+
+/** 다음 질문: transcript 초기화 후 음성 인식 새로 시작 */
+function beginNextQuestionRecording(cfg) {
+  const state = getCameraInterviewState(cfg);
+  stopCameraRecognition(cfg, { keepResults: false });
+  state.recognitionFinalBuffer = '';
+  state.currentTranscript = '';
+  updateLiveTranscript(cfg);
+  console.log('[camera interview] question index:', state.currentQuestionIndex);
+  console.log('[camera interview] transcript reset');
+  return startCameraRecognition(cfg);
+}
+
+function restartCurrentQuestionRecording(cfg) {
+  const state = getCameraInterviewState(cfg);
+  stopCameraRecognition(cfg, { keepResults: false });
+  state.recognitionFinalBuffer = '';
+  state.currentTranscript = '';
+  updateLiveTranscript(cfg);
+  console.log('[camera interview] transcript reset (retry same question)');
+  return startCameraRecognition(cfg);
 }
 
 function finalizeCameraTranscript(cfg) {
@@ -284,6 +315,7 @@ function finalizeCameraTranscript(cfg) {
       resolve(text);
       return;
     }
+    state.shouldRestartRecognition = false;
     state.isListening = false;
     const active = state.recognition;
     state.recognition = null;
@@ -312,11 +344,7 @@ function finalizeCameraTranscript(cfg) {
 }
 
 function resetQuestionTranscript(cfg) {
-  const state = getCameraInterviewState(cfg);
-  state.recognitionFinalBuffer = '';
-  state.currentTranscript = '';
-  updateLiveTranscript(cfg);
-  startCameraRecognition(cfg);
+  return beginNextQuestionRecording(cfg);
 }
 
 function startVolumeMonitor(stream, cfg) {
@@ -610,13 +638,20 @@ async function onCameraInterviewEndAnswer(cfg, event) {
     }
 
     if (!answerText || isPlaceholderAnswer(answerText)) {
-      setCamError(cfg, '답변이 인식되지 않았습니다. 마이크에 대고 다시 답변해 주세요.');
+      setCamError(cfg, '답변이 인식되지 않았습니다. 다시 답변해주세요.');
       if (!isLastQuestion) {
+        if (!restartCurrentQuestionRecording(cfg)) {
+          return;
+        }
         scheduleEnableEndAnswerActions(cfg);
       } else {
-        startCameraRecognition(cfg);
+        if (!restartCurrentQuestionRecording(cfg)) {
+          return;
+        }
         scheduleEnableEndAnswerActions(cfg);
       }
+      state.isRecording = true;
+      updateCameraInterviewUi(cfg);
       return;
     }
 
@@ -637,7 +672,13 @@ async function onCameraInterviewEndAnswer(cfg, event) {
       if (state.currentQuestionIndex < cfg.questions.length - 1) {
         state.currentQuestionIndex += 1;
         updateQuestionDisplay(cfg);
+        if (!beginNextQuestionRecording(cfg)) {
+          setCamError(cfg, '음성 인식을 다시 시작할 수 없습니다.');
+          return;
+        }
+        state.isRecording = true;
         scheduleEnableEndAnswerActions(cfg);
+        updateCameraInterviewUi(cfg);
         return;
       }
     } else {

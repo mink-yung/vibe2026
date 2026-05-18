@@ -65,6 +65,44 @@
 .ir-feedback-block:last-child { margin-bottom: 0; }
 .ir-feedback-persona { font-size: 12px; font-weight: 700; color: #495057; margin-bottom: 8px; }
 
+.ir-detail-qa .ir-detail-label { margin-bottom: 10px; }
+
+.qa-pair-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.qa-pair-card {
+  padding: 16px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.qa-pair-card .question-label,
+.qa-pair-card .answer-label {
+  font-weight: 700;
+  font-size: 12px;
+  color: #495057;
+  margin-bottom: 6px;
+}
+
+.qa-pair-card .answer-label {
+  margin-top: 12px;
+}
+
+.qa-pair-card .question-text,
+.qa-pair-card .answer-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #343a40;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
 .ir-delete-msg { font-size: 14px; line-height: 1.6; color: #343a40; margin: 0 0 20px; }
 .ir-delete-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .ir-delete-confirm { background: #e03131 !important; }

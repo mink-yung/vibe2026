@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI ??? ???? ???????</title>
+  <title>AI 면접 준비 플랫폼</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="dashboard.css" />
   <link rel="stylesheet" href="interview-record.css" />
   <link rel="stylesheet" href="quick-interview.css" />
-  <link rel="stylesheet" href="video-interview.css" />
   <link rel="stylesheet" href="device-check.css" />
+  <link rel="stylesheet" href="video-interview.css" />
   <link rel="stylesheet" href="basic-interview.css" />
   <link rel="stylesheet" href="quick-result.css" />
   <link rel="stylesheet" href="normal-result.css" />
@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="interviewer.css" />
 </head>
 <body>
+
 
 <div class="sidebar">
   <div class="logo-box">
@@ -32,24 +33,24 @@
   </div>
   <nav>
     <button type="button" class="nav-item" onclick="location.href='dashboard.html'">
-      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span> ???
+      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span> 홈
     </button>
     <button type="button" class="nav-item active" onclick="location.href='mock-interview.html'">
-      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></span> ??????
+      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></span> 모의면접
     </button>
     <button type="button" class="nav-item" onclick="location.href='interview-analysis.html'">
-      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> ????????
+      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> 면접분석
     </button>
     <button type="button" class="nav-item" onclick="location.href='ai-feedback.html'">
-      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span> AI???????
+      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span> AI피드백
     </button>
     <button type="button" class="nav-item" onclick="location.href='interview-record.html'">
-      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span> ?????
+      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span> 면접기록
     </button>
   </nav>
   <div class="theme-btns">
-    <button class="theme-btn on">????</button>
-    <button class="theme-btn">????</button>
+    <button type="button" class="theme-btn on">☀️</button>
+    <button type="button" class="theme-btn">🌙</button>
   </div>
 </div>
 
@@ -59,35 +60,37 @@
     <div class="vi-wrap">
 
       <div class="vi-topbar">
+
         <div class="vi-topbar-left">
-          <span class="vi-badge">?? ???</span>
+          <span class="vi-badge">기본 면접</span>
         </div>
         <div class="vi-topbar-center">
-          <span class="vi-topbar-stat-label">???</span>
+          <span class="vi-topbar-stat-label">질문</span>
           <span class="vi-q-progress" id="vi-q-progress">1 / 5</span>
           <span class="vi-divider">|</span>
-          <span class="vi-topbar-stat-label">????? ?????</span>
+          <span class="vi-topbar-stat-label">진행 시간</span>
           <span class="vi-timer" id="vi-timer">00:00</span>
           <span id="vi-q-info" class="vi-q-info-sr" hidden aria-hidden="true"></span>
         </div>
         <div class="vi-topbar-right">
           <button type="button" class="vi-end-btn vi-exit-interview-btn" id="vi-exit-interview">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            ??? ????
+            면접 종료
           </button>
         </div>
+      
       </div>
 
       <div class="vi-videos">
         <div class="vi-video-wrap interviewer">
-          <div class="vi-video-label">?????</div>
+          <div class="vi-video-label">면접관</div>
           <div class="vi-video-bg interviewer-bg">
             <div class="vi-interviewer-caption vi-interviewer-caption-overlay">
               <span class="vi-question-label" id="vi-q-label">Q1</span>
-              <p class="vi-question-text" id="vi-q-text">?????????? ??????????.</p>
+              <p class="vi-question-text" id="vi-q-text">자기소개를 해주세요.</p>
             </div>
             <div class="vi-interviewer-photo">
-              <img id="vi-interviewer-img" class="interviewer-img" alt="AI ???" />
+              <img id="vi-interviewer-img" class="interviewer-img" alt="AI 면접관" />
             </div>
             <div class="vi-avatar" aria-hidden="true">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -95,8 +98,8 @@
           </div>
         </div>
         <div class="vi-video-wrap user">
-          <div class="vi-video-label">??? (????????)</div>
-          <span class="vi-rec-badge" id="vi-rec-badge" hidden>??? ?????? ??</span>
+          <div class="vi-video-label">나 (지원자)</div>
+          <span class="vi-rec-badge" id="vi-rec-badge" hidden>● 녹화 중</span>
           <div class="vi-video-bg user-bg">
             <video id="vi-user-video" class="cam-user-video" autoplay playsinline muted hidden></video>
             <div class="vi-avatar">
@@ -106,25 +109,26 @@
         </div>
       </div>
 
-      <p class="vi-cam-error" id="vi-cam-error" hidden></p>
-      <p class="cam-live-transcript cam-transcript-empty" id="vi-live-transcript" aria-live="polite">??????????? ??????? ?????? ?????????????.</p>
 
-      <div class="vi-controls">
+      <p class="vi-cam-error" id="vi-cam-error" hidden></p>
+      <p class="cam-live-transcript cam-transcript-empty" id="vi-live-transcript" aria-live="polite">말씀하시면 여기에 답변이 표시됩니다.</p>
+
+<div class="vi-controls">
         <div class="vi-controls-left"></div>
         <div class="vi-controls-center">
-          <button type="button" class="vi-ctrl-btn cam-start-btn" id="vi-cam-start">??? ??????</button>
-          <button type="button" class="vi-ctrl-btn cam-end-answer-btn" id="vi-cam-end-answer" hidden>????? ????</button>
-          <button class="vi-ctrl-btn" title="????" type="button" disabled>
+          <button type="button" class="vi-ctrl-btn cam-start-btn" id="vi-cam-start">면접 시작</button>
+          <button type="button" class="vi-ctrl-btn cam-end-answer-btn" id="vi-cam-end-answer" hidden>답변 종료</button>
+          <button class="vi-ctrl-btn" title="마이크" type="button" disabled>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-            <span>????</span>
+            <span>마이크</span>
           </button>
-          <button type="button" class="vi-ctrl-btn" title="????">
+          <button type="button" class="vi-ctrl-btn" title="카메라">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-            <span>????</span>
+            <span>카메라</span>
           </button>
-          <button type="button" class="vi-ctrl-btn end" title="??????" onclick="openInterviewExitWarnModal('basic')">
+          <button type="button" class="vi-ctrl-btn end" title="나가기" onclick="openInterviewExitWarnModal('basic')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            <span>??????</span>
+            <span>나가기</span>
           </button>
         </div>
         <div class="vi-controls-right"></div>
@@ -132,55 +136,60 @@
 
     </div>
 
-    <div id="vi-analyzing-overlay" class="cam-analyzing-overlay" hidden>
+    
+    </div>
+
+<div id="vi-analyzing-overlay" class="cam-analyzing-overlay" hidden>
       <div class="cam-analyzing-inner">
         <div class="cam-spinner" aria-hidden="true"></div>
-        <p id="vi-analyzing-text">AI?? ??????? ????? ???????????...</p>
+        <p id="vi-analyzing-text">AI가 답변을 분석 중입니다...</p>
         <p id="vi-analyzing-error" class="cam-analyzing-error" hidden></p>
-        <button type="button" class="btn-secondary" id="vi-analyzing-retry" hidden>?????? ?????</button>
+        <button type="button" class="btn-secondary" id="vi-analyzing-retry" hidden>다시 시도</button>
       </div>
-    </div>
+    
   </div>
 </div>
 
-<!-- ??? ?????? ?? (?? ???) -->
+<!-- 면접 나가기 경고 (기본 면접) -->
 <div class="modal-overlay" id="interviewExitWarnModal" onclick="closeInterviewExitWarnOutside(event)">
   <div class="modal-box modal-box-auth modal-box-exit-warn" role="dialog" aria-labelledby="interviewExitWarnTitle" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <span class="modal-title" id="interviewExitWarnTitle">??????</span>
-      <button type="button" class="modal-close-btn" onclick="closeInterviewExitWarnModal()" aria-label="????">???</button>
+      <span class="modal-title" id="interviewExitWarnTitle">안내</span>
+      <button type="button" class="modal-close-btn" onclick="closeInterviewExitWarnModal()" aria-label="닫기">✕</button>
     </div>
     <div class="modal-body">
-      <p class="interview-exit-warn-text">??: ?????? ????????? ????????????. ???????? ?????? ???????????????.</p>
+      <p class="interview-exit-warn-text">경고: 면접기록이 저장되지 않습니다. 면접종료를 눌러 저장해주세요.</p>
       <div class="interview-exit-warn-actions">
-        <button type="button" class="btn-secondary" onclick="closeInterviewExitWarnModal()">????</button>
-        <button type="button" class="btn-secondary" onclick="interviewExitWarnConfirmLeave(false)">??????</button>
-        <button type="button" class="btn-primary" onclick="interviewExitWarnConfirmLeave(true)">?????? ??? ????</button>
+        <button type="button" class="btn-secondary" onclick="closeInterviewExitWarnModal()">취소</button>
+        <button type="button" class="btn-secondary" onclick="interviewExitWarnConfirmLeave(false)">나가기</button>
+        <button type="button" class="btn-primary" onclick="interviewExitWarnConfirmLeave(true)">다시 보지 않기</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ???? ???? -->
+
+<!-- 로그인 모달 -->
 <div class="modal-overlay" id="loginModal" onclick="closeLoginOutside(event)">
   <div class="modal-box modal-box-auth">
     <div class="modal-header">
-      <span class="modal-title">????</span>
-      <button type="button" class="modal-close-btn" onclick="closeLoginModal()" aria-label="????">???</button>
+      <span class="modal-title">로그인</span>
+      <button type="button" class="modal-close-btn" onclick="closeLoginModal()" aria-label="닫기">✕</button>
     </div>
     <div class="modal-body">
       <form class="auth-form" id="loginForm" onsubmit="handleLoginSubmit(event)">
         <div id="login-error" class="auth-alert auth-alert-error" role="alert" hidden></div>
-        <label class="auth-label" for="login-email">????</label>
+        <label class="auth-label" for="login-email">이메일</label>
         <input type="email" id="login-email" class="auth-input" name="email" autocomplete="email" required placeholder="you@example.com" oninput="clearLoginError()" />
-        <label class="auth-label" for="login-password">?????????</label>
-        <input type="password" id="login-password" class="auth-input" name="password" autocomplete="current-password" required placeholder="?????????" oninput="clearLoginError()" />
-        <button type="submit" class="btn-primary auth-submit">????</button>
+        <label class="auth-label" for="login-password">비밀번호</label>
+        <input type="password" id="login-password" class="auth-input" name="password" autocomplete="current-password" required placeholder="비밀번호" oninput="clearLoginError()" />
+        <button type="submit" class="btn-primary auth-submit">로그인</button>
       </form>
-      <p class="auth-switch">????? ??????????????? <a href="signup.html" onclick="closeLoginModal()">???????????</a></p>
+      <p class="auth-switch">계정이 없으신가요? <a href="signup.html" onclick="closeLoginModal()">회원가입</a></p>
     </div>
   </div>
 </div>
+
 
 <script src="interview-interviewers.js"></script>
 <script src="api.js"></script>
@@ -190,3 +199,4 @@
 <script src="camera-interview.js"></script>
 </body>
 </html>
+

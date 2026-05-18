@@ -3,7 +3,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 16px;
+  margin: 16px auto;
 }
 
 .interviewer-area--compact {
@@ -28,9 +28,9 @@
 }
 
 .interviewer-img {
-  width: 160px;
-  max-width: 35vw;
+  width: clamp(150px, 18vw, 240px);
   height: auto;
+  max-height: 260px;
   object-fit: contain;
   border-radius: 16px;
   display: block;
@@ -88,7 +88,8 @@
 }
 
 .qi-interviewer-block .interviewer-img {
-  width: 140px;
+  width: clamp(120px, 28vw, 160px);
+  max-height: 180px;
 }
 
 .qi-interviewer-block .voice-icon {
@@ -109,9 +110,8 @@
 }
 
 .mock-card-interviewer .interviewer-img {
-  width: 100px;
-  max-width: 100%;
-  border-radius: 14px;
+  width: clamp(100px, 22vw, 120px);
+  max-height: 140px;
 }
 
 /* 기본 카메라 면접 — 면접관 영역 */
@@ -127,11 +127,13 @@
   justify-content: center;
   z-index: 1;
   pointer-events: none;
+  padding: 12px;
 }
 
 #videoInterviewSection .vi-interviewer-photo .interviewer-img {
-  width: min(180px, 45%);
-  max-height: 70%;
+  width: clamp(180px, 22vw, 260px);
+  max-width: 92%;
+  max-height: min(72%, 280px);
   object-fit: contain;
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
@@ -141,7 +143,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
-/* 실전 면접 — 작은 패널 */
+/* 실전 면접 — 패널 면접관 */
 #basicInterviewSection .bi-interviewer-panel .bi-avatar {
   display: none;
 }
@@ -152,48 +154,52 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  min-height: 60px;
+  min-height: 80px;
+  padding: 6px;
+  box-sizing: border-box;
 }
 
 #basicInterviewSection .bi-interviewer-panel .interviewer-img {
-  width: 100%;
-  max-width: 72px;
-  max-height: 72px;
-  object-fit: cover;
+  width: clamp(110px, 90%, 200px);
+  max-width: 100%;
+  max-height: clamp(110px, 28vh, 220px);
+  object-fit: contain;
   border-radius: 12px;
 }
 
-#basicInterviewSection .bi-interviewer-panel.active .interviewer-img-wrap {
-  box-shadow: 0 0 0 2px #339af0;
+#basicInterviewSection .bi-interviewer-panel.active .bi-interviewer-photo {
+  box-shadow: inset 0 0 0 2px #339af0;
+  border-radius: 12px;
 }
 
 @media (max-width: 768px) {
   .interviewer-img {
-    width: 120px;
-    max-width: 45vw;
-  }
-
-  .qi-interviewer-block .interviewer-img {
-    width: 110px;
+    width: clamp(110px, 35vw, 150px);
+    max-height: 170px;
   }
 
   #videoInterviewSection .vi-interviewer-photo .interviewer-img {
-    width: min(120px, 40vw);
+    width: clamp(130px, 38vw, 180px);
+    max-height: min(65%, 200px);
   }
 
   #basicInterviewSection .bi-interviewer-panel .interviewer-img {
-    max-width: 56px;
-    max-height: 56px;
+    width: clamp(90px, 85%, 150px);
+    max-height: clamp(90px, 22vh, 160px);
   }
 }
 
 @media (max-width: 430px) {
   .interviewer-img {
-    width: 100px;
-    max-width: 55vw;
+    width: clamp(100px, 42vw, 130px);
+    max-height: 150px;
   }
 
   .mock-card-interviewer .interviewer-img {
-    width: 80px;
+    width: clamp(80px, 36vw, 100px);
+  }
+
+  #videoInterviewSection .vi-interviewer-photo .interviewer-img {
+    width: clamp(110px, 40vw, 150px);
   }
 }
