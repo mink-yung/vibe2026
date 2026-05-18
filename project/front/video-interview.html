@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="quick-result.css" />
   <link rel="stylesheet" href="normal-result.css" />
   <link rel="stylesheet" href="basic-result.css" />
+  <link rel="stylesheet" href="interview-display.css" />
 </head>
 <body>
 
@@ -52,7 +53,7 @@
 
 <div class="main">
   <div class="topbar" id="authTopbar"></div>
-  <div id="videoInterviewSection" class="vi-theme-light" style="display:block; position:fixed; inset:0; z-index:500;">
+  <div id="videoInterviewSection" class="vi-theme-light basic-interview-page" style="display:block; position:fixed; inset:0; z-index:500;">
     <div class="vi-wrap">
 
       <div class="vi-topbar">
@@ -75,16 +76,23 @@
         </div>
       </div>
 
+      <div class="interview-top-panel" id="vi-interview-top-panel">
+        <div class="interviewer-name" id="vi-interviewer-name">AI 면접관</div>
+        <div class="question-card">
+          <span class="vi-question-label question-label" id="vi-q-label">Q1</span>
+          <p class="vi-question-text question-text" id="vi-q-text">자기소개를 해주세요.</p>
+        </div>
+      </div>
+
       <div class="vi-videos">
         <div class="vi-video-wrap interviewer">
-          <div class="vi-video-label">면접관</div>
+          <div class="vi-video-label vi-video-label-sr" aria-hidden="true">면접관</div>
           <div class="vi-video-bg interviewer-bg">
-            <div class="vi-interviewer-caption vi-interviewer-caption-overlay">
-              <span class="vi-question-label" id="vi-q-label">Q1</span>
-              <p class="vi-question-text" id="vi-q-text">자기소개를 해주세요.</p>
-            </div>
-            <div class="vi-avatar">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <div class="interviewer-area">
+              <img class="interviewer-img" src="assets/interviewer-basic.png" alt="AI 면접관" onerror="this.hidden=true" />
+              <div class="vi-avatar" aria-hidden="true">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
             </div>
           </div>
         </div>

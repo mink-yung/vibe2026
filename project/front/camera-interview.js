@@ -134,23 +134,22 @@ function updateQuestionDisplay(cfg) {
       const isActive = item.interviewer === n;
       if (panel) panel.classList.toggle('active', isActive);
       if (caption) {
-        if (isActive && state.isStarted) {
-          caption.textContent = qText;
-          caption.hidden = false;
-        } else {
-          caption.textContent = '';
-          caption.hidden = true;
-        }
+        caption.textContent = '';
+        caption.hidden = true;
       }
     });
+    if (cfg.topNameEl) {
+      cfg.topNameEl.textContent = 'AI 면접관 ' + (item.interviewer || 1);
+    }
+    if (cfg.topLabelEl) cfg.topLabelEl.textContent = 'Q' + (idx + 1);
+    if (cfg.topTextEl) cfg.topTextEl.textContent = qText;
+    if (cfg.topPanelEl) cfg.topPanelEl.hidden = false;
     return;
   }
 
   if (cfg.qLabelEl) cfg.qLabelEl.textContent = 'Q' + (idx + 1);
   if (cfg.qTextEl) cfg.qTextEl.textContent = qText;
-  if (cfg.captionWrapEl) {
-    cfg.captionWrapEl.hidden = !state.isStarted;
-  }
+  if (cfg.topPanelEl) cfg.topPanelEl.hidden = false;
 }
 
 function scheduleEnableEndAnswerActions(cfg) {
@@ -405,7 +404,7 @@ function buildVideoInterviewCameraConfig() {
       ? BASIC_INTERVIEW_QUESTIONS
       : ['자기소개를 해주세요.'];
 
-  const captionWrap = section.querySelector('.vi-interviewer-caption-overlay');
+  const topPanel = document.getElementById('vi-interview-top-panel');
 
   const cfg = {
     sectionEl: section,
@@ -421,7 +420,7 @@ function buildVideoInterviewCameraConfig() {
     qTextEl: document.getElementById('vi-q-text'),
     qInfoEl: document.getElementById('vi-q-info'),
     qProgressEl: document.getElementById('vi-q-progress'),
-    captionWrapEl: captionWrap,
+    topPanelEl: topPanel,
     questions: questions,
     multiQuestion: true,
     placeholderAnswer:
@@ -436,7 +435,7 @@ function buildVideoInterviewCameraConfig() {
     timerEl: document.getElementById('vi-timer'),
     submitFn: hooks => finishBasicVideoInterviewSubmit(hooks),
   };
-  if (captionWrap) captionWrap.hidden = true;
+  if (topPanel) topPanel.hidden = false;
   return cfg;
 }
 
@@ -468,6 +467,10 @@ function buildBasicInterviewCameraConfig() {
     exitBtn: document.getElementById('bi-exit-interview'),
     qProgressEl: document.getElementById('bi-q-progress'),
     qInfoEl: document.getElementById('bi-q-info'),
+    topPanelEl: document.getElementById('bi-interview-top-panel'),
+    topNameEl: document.getElementById('bi-interviewer-name'),
+    topLabelEl: document.getElementById('bi-q-label-top'),
+    topTextEl: document.getElementById('bi-q-text-top'),
     questions: questions,
     multiQuestion: true,
     interviewerPanels: interviewerPanels,

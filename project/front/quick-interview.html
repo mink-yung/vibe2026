@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="quick-result.css" />
   <link rel="stylesheet" href="normal-result.css" />
   <link rel="stylesheet" href="basic-result.css" />
+  <link rel="stylesheet" href="interview-display.css" />
 </head>
 <body>
 
@@ -52,7 +53,7 @@
 
 <div class="main">
   <div class="topbar" id="authTopbar"></div>
-  <div id="quickInterviewSection" style="">
+  <div id="quickInterviewSection" class="quick-interview-page" style="">
     <div class="qi-page">
 
       <button type="button" class="back-btn" onclick="location.href='mock-interview.html'">← 뒤로가기</button>
@@ -68,6 +69,11 @@
 
       <div class="qi-body">
         <div class="qi-card">
+          <div class="interview-top-panel qi-question-top-panel">
+            <div class="question-card">
+              <div class="question-text" id="qi-question">면접 시작 버튼을 눌러 주세요.</div>
+            </div>
+          </div>
           <div class="progress-row">
             <span class="progress-label" id="qi-progress">-</span>
             <div class="progress-bar-wrap">
@@ -94,7 +100,6 @@
               <line x1="21" y1="13" x2="21" y2="11"/>
             </svg>
           </div>
-          <div class="question-text" id="qi-question">면접 시작 버튼을 눌러 주세요.</div>
           <div class="question-sub" id="qi-question-sub"></div>
           <p class="question-sub" id="qi-status"></p>
           <p class="question-sub qi-live-transcript" id="qi-live-transcript"></p>
