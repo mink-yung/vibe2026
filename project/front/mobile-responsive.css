@@ -443,8 +443,22 @@ svg {
   }
 
   #basicInterviewSection .bi-video-small {
-    flex: 1 1 calc(33% - 8px);
-    min-width: 90px;
+    flex: 1 1 100%;
+    min-width: 0;
+    min-height: 200px;
+  }
+
+  #basicInterviewSection .bi-interviewer-panel .interviewer-img {
+    width: clamp(140px, 70vw, 220px) !important;
+    max-height: 220px !important;
+    border-radius: 14px !important;
+    object-fit: contain !important;
+  }
+
+  #basicInterviewSection.bi-theme-light .bi-panel-question {
+    bottom: 8px;
+    max-height: 38%;
+    font-size: 15px;
   }
 
   #basicInterviewSection .bi-video-main {
@@ -487,22 +501,11 @@ svg {
     width: 100%;
   }
 
-  /* 면접관 이미지 영역 (사진 연동 예정 — .interviewer-img 추가 시 표시) */
-  .interviewer-area,
-  .interviewer-bg {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-
-  .interviewer-img {
-    width: 160px;
-    max-width: 40vw;
-    height: auto;
-    border-radius: 50%;
-    object-fit: cover;
-    display: block;
+  /* 면접관 이미지 — 카메라 면접 패널은 interviewer.css 규칙 우선 */
+  .qi-interviewer-block .interviewer-img,
+  .mock-card-interviewer .interviewer-img {
+    border-radius: 16px;
+    object-fit: contain;
   }
 
   .interviewer-bg .vi-avatar,
