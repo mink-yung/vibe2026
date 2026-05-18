@@ -277,6 +277,33 @@
   margin: 0;
   border-radius: 0;
   aspect-ratio: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+/* 기본면접만: 면접관 사진 잘림 방지 (contain + 크기 제한) */
+#videoInterviewSection.basic-interview-page .vi-interviewer-stage .vi-interviewer-photo {
+  position: relative;
+  inset: auto;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#videoInterviewSection.basic-interview-page .vi-interviewer-stage .interviewer-img {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  max-width: 520px !important;
+  max-height: 70vh !important;
+  height: auto !important;
+  object-fit: contain !important;
 }
 
 #videoInterviewSection.basic-interview-page .vi-video-wrap.user.user-camera-box {
@@ -441,6 +468,11 @@
 
   #videoInterviewSection.basic-interview-page .vi-video-wrap.interviewer {
     flex: 1 1 52%;
+  }
+
+  #videoInterviewSection.basic-interview-page .vi-interviewer-stage .interviewer-img {
+    max-width: 90vw !important;
+    max-height: 55vh !important;
   }
 
   #videoInterviewSection.basic-interview-page .vi-video-wrap.user.user-camera-box {
