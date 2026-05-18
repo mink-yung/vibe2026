@@ -65,8 +65,7 @@
 
 /* 영상 영역 */
 #videoInterviewSection .vi-videos { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-#videoInterviewSection .vi-video-wrap { position: relative; flex: 1; }
-#videoInterviewSection .vi-video-wrap.user { flex: 0 0 35%; }
+#videoInterviewSection .vi-video-wrap { position: relative; flex: 1; min-height: 0; }
 #videoInterviewSection .vi-video-bg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 #videoInterviewSection .interviewer-bg { background: #1c1c1c; }
 #videoInterviewSection .user-bg { background: #2a2a2a; border-top: 2px solid #333; }

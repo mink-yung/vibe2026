@@ -552,13 +552,11 @@ function updateQuestionDisplay(cfg) {
     }
     if (cfg.topLabelEl) cfg.topLabelEl.textContent = 'Q' + (idx + 1);
     if (cfg.topTextEl) cfg.topTextEl.textContent = qText;
-    if (cfg.topPanelEl) cfg.topPanelEl.hidden = false;
     return;
   }
 
   if (cfg.qLabelEl) cfg.qLabelEl.textContent = 'Q' + (idx + 1);
   if (cfg.qTextEl) cfg.qTextEl.textContent = qText;
-  if (cfg.topPanelEl) cfg.topPanelEl.hidden = false;
 }
 
 function scheduleEnableEndAnswerActions(cfg) {
@@ -944,8 +942,6 @@ function buildVideoInterviewCameraConfig() {
       ? BASIC_INTERVIEW_QUESTIONS
       : ['자기소개를 해주세요.'];
 
-  const topPanel = document.getElementById('vi-interview-top-panel');
-
   return {
     sectionEl: section,
     mode: 'basic',
@@ -963,7 +959,6 @@ function buildVideoInterviewCameraConfig() {
     qTextEl: document.getElementById('vi-q-text'),
     qInfoEl: document.getElementById('vi-q-info'),
     qProgressEl: document.getElementById('vi-q-progress'),
-    topPanelEl: topPanel,
     questions: questions,
     multiQuestion: true,
     recBadge: document.getElementById('vi-rec-badge'),
@@ -978,8 +973,6 @@ function buildVideoInterviewCameraConfig() {
       return finishBasicVideoInterviewSubmit(hooks);
     },
   };
-  if (topPanel) topPanel.hidden = false;
-  return cfg;
 }
 
 function buildBasicInterviewCameraConfig() {
@@ -1012,7 +1005,6 @@ function buildBasicInterviewCameraConfig() {
     exitBtn: document.getElementById('bi-exit-interview'),
     qProgressEl: document.getElementById('bi-q-progress'),
     qInfoEl: document.getElementById('bi-q-info'),
-    topPanelEl: document.getElementById('bi-interview-top-panel'),
     topNameEl: document.getElementById('bi-interviewer-name'),
     topLabelEl: document.getElementById('bi-q-label-top'),
     topTextEl: document.getElementById('bi-q-text-top'),

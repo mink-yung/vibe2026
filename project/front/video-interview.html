@@ -30,7 +30,7 @@
       <rect x="13.5" y="0" width="3" height="18" rx="1.5" fill="#343a40"/>
       <rect x="18" y="5" width="3" height="8" rx="1.5" fill="#343a40"/>
     </svg>
-    <span style="letter-spacing:0.04em;">INTERVIEW AI</span>
+    <span style="letter-spacing:0.04em;">intertrio</span>
   </div>
   <nav>
     <button type="button" class="nav-item" onclick="location.href='dashboard.html'">
@@ -82,18 +82,10 @@
       
       </div>
 
-      <div class="interview-top-panel" id="vi-interview-top-panel">
-        <div class="interviewer-name" id="vi-interviewer-name">AI 면접관</div>
-        <div class="question-card">
-          <span class="vi-question-label question-label" id="vi-q-label">Q1</span>
-          <p class="vi-question-text question-text" id="vi-q-text">자기소개를 해주세요.</p>
-        </div>
-      </div>
-
       <div class="vi-videos">
         <div class="vi-video-wrap interviewer">
-          <div class="vi-video-label vi-video-label-sr" aria-hidden="true">면접관</div>
-          <div class="vi-video-bg interviewer-bg">
+          <div class="vi-video-label">면접관</div>
+          <div class="interviewer-stage vi-interviewer-stage">
             <div class="vi-interviewer-photo interviewer-area">
               <img id="vi-interviewer-img" class="interviewer-img" alt="AI 면접관" />
               <span class="interviewer-img-fallback" hidden>AI 면접관</span>
@@ -101,12 +93,17 @@
             <div class="vi-avatar" aria-hidden="true">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
+            <div class="interviewer-overlay">
+              <div class="interviewer-name" id="vi-interviewer-name">AI 면접관</div>
+              <span class="vi-question-label question-label" id="vi-q-label">Q1</span>
+              <p class="vi-question-text question-overlay-text" id="vi-q-text">자기소개를 해주세요.</p>
+            </div>
           </div>
         </div>
-        <div class="vi-video-wrap user">
+        <div class="vi-video-wrap user user-camera-box">
           <div class="vi-video-label">나 (지원자)</div>
           <span class="vi-rec-badge" id="vi-rec-badge" hidden>● 녹화 중</span>
-          <div class="vi-video-bg user-bg">
+          <div class="vi-video-bg user-bg user-video-box">
             <video id="vi-user-video" class="cam-user-video" autoplay playsinline muted hidden></video>
             <div class="vi-avatar">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -114,7 +111,6 @@
           </div>
         </div>
       </div>
-
 
       <p class="vi-cam-error" id="vi-cam-error" hidden></p>
       <p class="cam-live-transcript cam-transcript-empty" id="vi-live-transcript" aria-live="polite">말씀하시면 여기에 답변이 표시됩니다.</p>
