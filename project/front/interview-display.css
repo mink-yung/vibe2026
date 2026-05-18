@@ -1,9 +1,5 @@
 /* --------------------------------------------------------------------------
    면접관/감독관 AI 이미지 — 화면별 표시
-   · 기본면접: #videoInterviewSection.basic-interview-page
-   · 실전면접: #basicInterviewSection
-   · 모의면접 종류 선택: #mockSection.mock-type-select
-   · 빠른면접: #quickInterviewSection.quick-interview-page
    -------------------------------------------------------------------------- */
 
 /* --- 모의면접 종류 선택: AI 사진 숨김 --- */
@@ -26,7 +22,7 @@
   padding-top: 28px;
 }
 
-/* --- 빠른면접: 면접관 사진 숨김 (질문 UI는 기존 카드 유지) --- */
+/* --- 빠른면접: 면접관 사진 숨김 --- */
 #quickInterviewSection.quick-interview-page .qi-interviewer-block,
 #quickInterviewSection.quick-interview-page .interviewer-area,
 #quickInterviewSection.quick-interview-page .supervisor-area,
@@ -52,7 +48,6 @@
   display: none !important;
 }
 
-/* 빠른면접 상단 질문 패널 */
 #quickInterviewSection .interview-top-panel,
 #quickInterviewSection .qi-question-top-panel {
   position: relative;
@@ -101,7 +96,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   기본면접 / 실전면접 — 분리했던 상단 질문 카드 숨김
+   공통: 분리 질문 카드 숨김 / wrap
    -------------------------------------------------------------------------- */
 #videoInterviewSection .interview-top-panel,
 #videoInterviewSection .question-card,
@@ -110,69 +105,64 @@
   display: none !important;
 }
 
-/* --------------------------------------------------------------------------
-   면접관 스테이지 + 사진 위 오버레이 (기본·실전 공통)
-   -------------------------------------------------------------------------- */
 #videoInterviewSection .vi-wrap,
 #basicInterviewSection .bi-wrap {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: 100%;
 }
 
 #videoInterviewSection .vi-videos,
 #basicInterviewSection .bi-videos {
-  position: relative;
-  z-index: 1;
   flex: 1;
   min-height: 0;
-  margin-top: 0;
   overflow: hidden;
 }
 
+/* --------------------------------------------------------------------------
+   면접관 스테이지 + 이미지 (기본·실전)
+   -------------------------------------------------------------------------- */
 #videoInterviewSection .interviewer-stage,
 #basicInterviewSection .interviewer-stage {
   position: relative;
   width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  border-radius: 24px;
-  background: #111827;
-  flex: 1;
-  min-height: 0;
   height: 100%;
-}
-
-#videoInterviewSection .interviewer-stage .interviewer-img,
-#basicInterviewSection .interviewer-stage .interviewer-img {
-  position: absolute;
-  inset: 0;
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
-  object-fit: cover;
-  display: block;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-#videoInterviewSection .interviewer-stage .interviewer-img[hidden] {
-  display: none !important;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #1c1c1c;
 }
 
 #videoInterviewSection .interviewer-stage .vi-interviewer-photo,
+#videoInterviewSection .interviewer-stage .bi-interviewer-photo,
 #basicInterviewSection .interviewer-stage .bi-interviewer-photo {
   position: absolute;
   inset: 0;
-  display: block;
   width: 100%;
   height: 100%;
   min-height: 0;
   padding: 0;
+  margin: 0;
+  display: block;
   z-index: 1;
+}
+
+#videoInterviewSection .interviewer-stage .interviewer-img,
+#basicInterviewSection .interviewer-stage .interviewer-img {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: block;
+}
+
+#videoInterviewSection .interviewer-stage .interviewer-img[hidden] {
+  display: none !important;
 }
 
 #videoInterviewSection .interviewer-stage .vi-avatar,
@@ -184,14 +174,6 @@
   justify-content: center;
   opacity: 0.35;
   z-index: 1;
-  width: 100%;
-  height: 100%;
-}
-
-#videoInterviewSection .interviewer-stage .vi-avatar svg,
-#basicInterviewSection .interviewer-stage .bi-avatar svg {
-  width: 28%;
-  height: 28%;
 }
 
 #videoInterviewSection .interviewer-stage .interviewer-img:not([hidden]) ~ .vi-avatar,
@@ -199,298 +181,297 @@
   display: none !important;
 }
 
+/* 질문·이름 오버레이 — 사진 위 좌상단 */
 #videoInterviewSection .interviewer-overlay,
-#basicInterviewSection .interviewer-overlay,
 #basicInterviewSection .bi-interviewer-overlay {
   position: absolute;
-  left: 20px;
-  right: 20px;
-  bottom: 20px;
+  top: 48px;
+  left: 14px;
+  right: 14px;
+  bottom: auto;
   z-index: 5;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 8px;
   pointer-events: none;
+  max-width: min(92%, 560px);
 }
 
 #videoInterviewSection .interviewer-overlay .interviewer-name,
 #videoInterviewSection .interviewer-overlay .question-overlay-text,
 #videoInterviewSection .interviewer-overlay .vi-question-label,
-#basicInterviewSection .interviewer-overlay .interviewer-name,
-#basicInterviewSection .interviewer-overlay .question-overlay-text,
-#basicInterviewSection .interviewer-overlay .question-label {
+#basicInterviewSection .bi-interviewer-overlay .interviewer-name,
+#basicInterviewSection .bi-interviewer-overlay .question-overlay-text,
+#basicInterviewSection .bi-interviewer-overlay .question-label {
   display: inline-block;
   width: fit-content;
   max-width: 100%;
-  color: #ffffff;
-  background: rgba(0, 0, 0, 0.58);
+  margin: 0;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(6px);
   padding: 8px 12px;
   border-radius: 12px;
   line-height: 1.5;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
   visibility: visible !important;
   opacity: 1 !important;
-  margin: 0;
 }
 
 #videoInterviewSection .interviewer-overlay .interviewer-name,
-#basicInterviewSection .interviewer-overlay .interviewer-name {
-  font-size: clamp(14px, 1.6vw, 18px);
-  font-weight: 800;
+#basicInterviewSection .bi-interviewer-overlay .interviewer-name {
+  font-size: clamp(13px, 1.5vw, 16px);
+  font-weight: 700;
+}
+
+#videoInterviewSection .interviewer-overlay .vi-question-label,
+#basicInterviewSection .bi-interviewer-overlay .question-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #dee2e6;
+  padding-bottom: 0;
 }
 
 #videoInterviewSection .interviewer-overlay .question-overlay-text,
-#basicInterviewSection .interviewer-overlay .question-overlay-text {
-  font-size: clamp(17px, 2.2vw, 24px);
+#basicInterviewSection .bi-interviewer-overlay .question-overlay-text {
+  font-size: clamp(15px, 2vw, 22px);
   font-weight: 700;
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
 
-#videoInterviewSection .interviewer-overlay .vi-question-label,
-#basicInterviewSection .interviewer-overlay .question-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: #e9ecef;
-}
-
-/* --------------------------------------------------------------------------
-   기본면접 — 레이아웃 (면접관 크게 + 유저 1:1)
-   -------------------------------------------------------------------------- */
-#videoInterviewSection.basic-interview-page .vi-videos {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 12px 16px 8px;
-  box-sizing: border-box;
-}
-
-#videoInterviewSection.basic-interview-page .vi-video-wrap.interviewer {
-  flex: 1 1 auto;
-  width: 100%;
-  max-width: 900px;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-#videoInterviewSection.basic-interview-page .vi-interviewer-stage {
-  width: 100%;
-  max-width: 900px;
-}
-
-#videoInterviewSection.basic-interview-page .vi-video-wrap.user.user-camera-box {
-  flex: 0 0 auto;
-  width: 180px;
-  max-width: min(180px, 42vw);
-  align-self: flex-end;
-  margin-right: 8px;
-}
-
-#videoInterviewSection.basic-interview-page .user-video-box {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  border-radius: 18px;
-  background: #000;
-  position: relative;
-}
-
-#videoInterviewSection.basic-interview-page .user-video-box .cam-user-video {
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
-  display: block;
-}
-
-#videoInterviewSection .vi-controls {
-  position: relative;
-  z-index: 5;
-  flex-shrink: 0;
-  visibility: visible !important;
-}
-
-/* --------------------------------------------------------------------------
-   실전면접 — 면접관 열 크게 + 유저 1:1
-   -------------------------------------------------------------------------- */
-#basicInterviewSection .bi-videos {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  gap: 12px;
-  padding: 12px;
-  box-sizing: border-box;
-}
-
-#basicInterviewSection .bi-interviewer-column {
-  order: 1;
-  flex: 1;
-  min-width: 0;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-#basicInterviewSection .bi-interviewer-overlay {
-  left: 16px;
-  right: 16px;
-  bottom: 16px;
-  z-index: 6;
-}
-
-#basicInterviewSection .bi-video-side {
-  flex: 1;
-  width: auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 0;
-}
-
-#basicInterviewSection .bi-interviewer-panel {
-  flex: 0 0 72px;
-  min-height: 72px;
-  overflow: hidden;
-  transition: flex 0.2s ease;
-}
-
-#basicInterviewSection .bi-interviewer-panel.active {
-  flex: 1 1 auto;
-  min-height: 160px;
-}
-
-#basicInterviewSection .bi-interviewer-panel .interviewer-stage {
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  aspect-ratio: auto;
-  border-radius: 16px;
-}
-
-#basicInterviewSection .bi-interviewer-panel:not(.active) .interviewer-stage {
-  aspect-ratio: 16 / 9;
-}
-
-#basicInterviewSection .bi-interviewer-panel.active .interviewer-stage {
-  aspect-ratio: 16 / 9;
-  min-height: 200px;
+#videoInterviewSection.vi-theme-light .interviewer-overlay .question-overlay-text,
+#basicInterviewSection.bi-theme-light .bi-interviewer-overlay .question-overlay-text {
+  background: rgba(0, 0, 0, 0.65);
 }
 
 #basicInterviewSection .bi-panel-question {
   display: none !important;
 }
 
-#basicInterviewSection .bi-video-main.user-camera-box {
-  flex: 0 0 auto;
-  width: 180px;
-  max-width: min(180px, 36vw);
-  height: auto;
-  align-self: flex-end;
-  order: 0;
+/* --------------------------------------------------------------------------
+   기본면접 — 상단 면접관(크게) + 하단 지원자(1:1)
+   -------------------------------------------------------------------------- */
+#videoInterviewSection.basic-interview-page .vi-videos {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  background: #111;
 }
 
-#basicInterviewSection .user-video-box {
+#videoInterviewSection.basic-interview-page .vi-video-wrap.interviewer {
+  flex: 1 1 58%;
+  min-height: 0;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  border-radius: 18px;
-  background: #000;
+  max-width: none;
+  display: block;
   position: relative;
 }
 
-#basicInterviewSection .user-video-box .cam-user-video {
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
-  display: block;
+#videoInterviewSection.basic-interview-page .vi-interviewer-stage {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  aspect-ratio: unset;
 }
 
-#basicInterviewSection .bi-controls {
+#videoInterviewSection.basic-interview-page .vi-video-wrap.user.user-camera-box {
+  flex: 1 1 42%;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  align-self: stretch;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-top: 2px solid #2a2a2a;
+}
+
+#videoInterviewSection.basic-interview-page .user-video-box {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #2a2a2a;
+  border-radius: 0;
+  position: relative;
+}
+
+#videoInterviewSection.basic-interview-page .user-video-box .cam-user-video {
+  width: auto !important;
+  height: auto !important;
+  max-width: min(100%, 72vh);
+  max-height: 100%;
+  aspect-ratio: 1 / 1 !important;
+  object-fit: cover !important;
+  border-radius: 0;
+}
+
+#videoInterviewSection.basic-interview-page.vi-theme-light .vi-videos,
+#videoInterviewSection.vi-theme-light.basic-interview-page .vi-videos {
+  background: #f8f9fa;
+}
+
+#videoInterviewSection.basic-interview-page.vi-theme-light .user-video-box,
+#videoInterviewSection.vi-theme-light.basic-interview-page .user-video-box {
+  background: #dee2e6;
+}
+
+#videoInterviewSection .vi-controls {
   position: relative;
   z-index: 5;
   flex-shrink: 0;
 }
 
 /* --------------------------------------------------------------------------
+   실전면접 — 좌 지원자(대형) + 우 면접관 3분할
+   -------------------------------------------------------------------------- */
+#basicInterviewSection .bi-videos {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 3px;
+  padding: 3px;
+  background: #111;
+  box-sizing: border-box;
+}
+
+#basicInterviewSection .bi-video-main.user-camera-box {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  width: auto;
+  max-width: none;
+  order: 0;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#basicInterviewSection .bi-video-main .user-video-box {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #2a2a2a;
+  border-radius: 0;
+  aspect-ratio: unset;
+}
+
+#basicInterviewSection .bi-video-main .user-video-box .cam-user-video {
+  width: min(100%, 100%) !important;
+  height: auto !important;
+  max-height: 100%;
+  max-width: min(100%, 56vh);
+  aspect-ratio: 1 / 1 !important;
+  object-fit: cover !important;
+}
+
+#basicInterviewSection .bi-video-side {
+  position: relative;
+  width: min(340px, 32vw);
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+  order: 1;
+}
+
+#basicInterviewSection .bi-interviewer-overlay {
+  top: 44px;
+  left: 10px;
+  right: 10px;
+  max-width: calc(100% - 20px);
+}
+
+#basicInterviewSection .bi-video-small.bi-interviewer-panel {
+  flex: 1 1 0;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+#basicInterviewSection .bi-interviewer-panel .interviewer-stage {
+  height: 100%;
+  border-radius: 12px;
+}
+
+#basicInterviewSection .bi-interviewer-panel.active {
+  box-shadow: inset 0 0 0 2px #339af0;
+}
+
+#basicInterviewSection .bi-interviewer-panel.active .interviewer-stage {
+  box-shadow: none;
+}
+
+#basicInterviewSection .bi-controls {
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+/* --------------------------------------------------------------------------
    반응형
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
-  #videoInterviewSection .interviewer-stage,
-  #basicInterviewSection .interviewer-stage {
-    aspect-ratio: 4 / 5;
-    border-radius: 18px;
-    max-width: 100%;
-  }
-
   #videoInterviewSection .interviewer-overlay,
-  #basicInterviewSection .interviewer-overlay,
   #basicInterviewSection .bi-interviewer-overlay {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-  }
-
-  #videoInterviewSection .interviewer-overlay .interviewer-name,
-  #videoInterviewSection .interviewer-overlay .question-overlay-text,
-  #videoInterviewSection .interviewer-overlay .vi-question-label,
-  #basicInterviewSection .interviewer-overlay .interviewer-name,
-  #basicInterviewSection .interviewer-overlay .question-overlay-text,
-  #basicInterviewSection .interviewer-overlay .question-label {
-    padding: 7px 10px;
-    border-radius: 10px;
+    top: 40px;
+    left: 10px;
+    right: 10px;
   }
 
   #videoInterviewSection .interviewer-overlay .question-overlay-text,
-  #basicInterviewSection .interviewer-overlay .question-overlay-text {
-    font-size: 16px;
+  #basicInterviewSection .bi-interviewer-overlay .question-overlay-text {
+    font-size: 15px;
   }
 
-  #videoInterviewSection.basic-interview-page .vi-videos {
-    padding: 8px 12px;
-    gap: 12px;
+  #videoInterviewSection.basic-interview-page .vi-video-wrap.interviewer {
+    flex: 1 1 52%;
   }
 
   #videoInterviewSection.basic-interview-page .vi-video-wrap.user.user-camera-box {
-    width: 120px;
-    max-width: min(120px, 38vw);
-    align-self: center;
-    margin-right: 0;
+    flex: 1 1 48%;
+  }
+
+  #videoInterviewSection.basic-interview-page .user-video-box .cam-user-video {
+    max-width: min(88vw, 360px);
   }
 
   #basicInterviewSection .bi-videos {
     flex-direction: column;
-    padding: 8px;
+  }
+
+  #basicInterviewSection .bi-video-main.user-camera-box {
+    flex: 0 0 auto;
+    min-height: 220px;
+    width: 100%;
+  }
+
+  #basicInterviewSection .bi-video-main .user-video-box .cam-user-video {
+    max-width: min(72vw, 280px);
   }
 
   #basicInterviewSection .bi-video-side {
     width: 100%;
-    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 280px;
   }
 
-  #basicInterviewSection .bi-interviewer-panel {
-    flex: 0 0 auto;
-    min-height: 100px;
-  }
-
-  #basicInterviewSection .bi-interviewer-panel.active {
-    min-height: 200px;
-  }
-
-  #basicInterviewSection .bi-video-main.user-camera-box {
-    width: 120px;
-    max-width: min(120px, 38vw);
-    align-self: center;
-    margin: 0 auto;
+  #basicInterviewSection .bi-video-small.bi-interviewer-panel {
+    min-height: 88px;
   }
 }

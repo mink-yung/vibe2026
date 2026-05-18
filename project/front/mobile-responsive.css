@@ -348,13 +348,13 @@ svg {
     justify-content: center;
   }
 
-  #videoInterviewSection .vi-videos {
-    min-height: 40vh;
-    flex: none;
+  #videoInterviewSection.basic-interview-page .vi-videos {
+    flex: 1;
+    min-height: 0;
   }
 
-  #videoInterviewSection .vi-video-wrap.user.user-camera-box {
-    flex: 0 0 auto;
+  #videoInterviewSection.basic-interview-page .vi-video-wrap.interviewer,
+  #videoInterviewSection.basic-interview-page .vi-video-wrap.user.user-camera-box {
     min-height: 0;
   }
 
@@ -435,15 +435,15 @@ svg {
 
   #basicInterviewSection .bi-video-side {
     width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 3px;
   }
 
-  #basicInterviewSection .bi-video-small {
-    flex: 1 1 100%;
+  #basicInterviewSection .bi-video-small.bi-interviewer-panel {
+    flex: 1 1 0;
     min-width: 0;
-    min-height: 200px;
+    min-height: 88px;
   }
 
   #basicInterviewSection .bi-interviewer-panel .interviewer-stage .interviewer-img {
