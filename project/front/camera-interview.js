@@ -978,11 +978,8 @@ function buildVideoInterviewCameraConfig() {
       return finishBasicVideoInterviewSubmit(hooks);
     },
   };
-<<<<<<< HEAD
   if (topPanel) topPanel.hidden = false;
   return cfg;
-=======
->>>>>>> 8ee3146888e76704c44de4d87aa6c086ef96e140
 }
 
 function buildBasicInterviewCameraConfig() {

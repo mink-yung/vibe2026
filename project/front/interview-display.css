@@ -13,7 +13,8 @@
   padding-bottom: 12px;
 }
 
-#videoInterviewSection.basic-interview-page .vi-video-wrap.interviewer .interviewer-area {
+#videoInterviewSection.basic-interview-page .vi-video-wrap.interviewer .interviewer-area,
+#videoInterviewSection.basic-interview-page .vi-interviewer-photo {
   position: relative;
   z-index: 2;
   display: flex;
@@ -22,6 +23,7 @@
   flex-shrink: 0;
 }
 
+#videoInterviewSection.basic-interview-page .vi-interviewer-photo .interviewer-img,
 #videoInterviewSection.basic-interview-page .interviewer-img {
   display: block;
   width: clamp(260px, 28vw, 380px);
@@ -78,6 +80,7 @@
 #mockSection.mock-type-select .interviewer-img,
 #mockSection.mock-type-select .supervisor-img,
 #mockSection.mock-type-select .mock-card-ai-photo,
+#mockSection.mock-type-select .mock-card-interviewer,
 #mockSection.mock-type-select img.interviewer-img,
 #mockSection.mock-type-select img.supervisor-img {
   display: none !important;
@@ -92,6 +95,7 @@
 }
 
 /* --- 3. 빠른면접 — 면접관/감독관 AI 사진 숨김 --- */
+#quickInterviewSection.quick-interview-page .qi-interviewer-block,
 #quickInterviewSection.quick-interview-page .interviewer-area,
 #quickInterviewSection.quick-interview-page .supervisor-area,
 #quickInterviewSection.quick-interview-page .interviewer-img,
@@ -265,6 +269,13 @@
 #videoInterviewSection .vi-interviewer-caption-overlay,
 #videoInterviewSection .vi-video-label-sr {
   display: none !important;
+}
+
+#videoInterviewSection .vi-controls {
+  position: relative;
+  z-index: 5;
+  flex-shrink: 0;
+  visibility: visible !important;
 }
 
 @media (max-width: 768px) {

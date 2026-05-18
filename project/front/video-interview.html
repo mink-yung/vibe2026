@@ -14,12 +14,9 @@
   <link rel="stylesheet" href="quick-result.css" />
   <link rel="stylesheet" href="normal-result.css" />
   <link rel="stylesheet" href="basic-result.css" />
-<<<<<<< HEAD
   <link rel="stylesheet" href="interview-display.css" />
-=======
   <link rel="stylesheet" href="mobile-responsive.css" />
   <link rel="stylesheet" href="interviewer.css" />
->>>>>>> 8ee3146888e76704c44de4d87aa6c086ef96e140
 </head>
 <body>
 
@@ -97,23 +94,12 @@
         <div class="vi-video-wrap interviewer">
           <div class="vi-video-label vi-video-label-sr" aria-hidden="true">면접관</div>
           <div class="vi-video-bg interviewer-bg">
-<<<<<<< HEAD
-            <div class="interviewer-area">
-              <img class="interviewer-img" src="assets/interviewer-basic.png" alt="AI 면접관" onerror="this.hidden=true" />
-              <div class="vi-avatar" aria-hidden="true">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              </div>
-=======
-            <div class="vi-interviewer-caption vi-interviewer-caption-overlay">
-              <span class="vi-question-label" id="vi-q-label">Q1</span>
-              <p class="vi-question-text" id="vi-q-text">자기소개를 해주세요.</p>
-            </div>
-            <div class="vi-interviewer-photo">
+            <div class="vi-interviewer-photo interviewer-area">
               <img id="vi-interviewer-img" class="interviewer-img" alt="AI 면접관" />
+              <span class="interviewer-img-fallback" hidden>AI 면접관</span>
             </div>
             <div class="vi-avatar" aria-hidden="true">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
->>>>>>> 8ee3146888e76704c44de4d87aa6c086ef96e140
             </div>
           </div>
         </div>
@@ -133,7 +119,7 @@
       <p class="vi-cam-error" id="vi-cam-error" hidden></p>
       <p class="cam-live-transcript cam-transcript-empty" id="vi-live-transcript" aria-live="polite">말씀하시면 여기에 답변이 표시됩니다.</p>
 
-<div class="vi-controls">
+      <div class="vi-controls">
         <div class="vi-controls-left"></div>
         <div class="vi-controls-center">
           <button type="button" class="vi-ctrl-btn cam-start-btn" id="vi-cam-start">면접 시작</button>
@@ -156,17 +142,14 @@
 
     </div>
 
-    
-    </div>
-
-<div id="vi-analyzing-overlay" class="cam-analyzing-overlay" hidden>
+    <div id="vi-analyzing-overlay" class="cam-analyzing-overlay" hidden>
       <div class="cam-analyzing-inner">
         <div class="cam-spinner" aria-hidden="true"></div>
         <p id="vi-analyzing-text">AI가 답변을 분석 중입니다...</p>
         <p id="vi-analyzing-error" class="cam-analyzing-error" hidden></p>
         <button type="button" class="btn-secondary" id="vi-analyzing-retry" hidden>다시 시도</button>
       </div>
-    
+    </div>
   </div>
 </div>
 
